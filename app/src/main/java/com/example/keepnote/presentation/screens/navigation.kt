@@ -12,7 +12,7 @@ import androidx.navigation.navArgument
 
 
 @Composable
-fun navigation(modifier: Modifier){
+fun navigation(){
     val navController = rememberNavController()
 
     Scaffold(
@@ -20,9 +20,12 @@ fun navigation(modifier: Modifier){
     ) { innerPadding ->
 
         NavHost(
-            navController, startDestination = navitem.Home.route) {
+            navController,
+            startDestination = navitem.Home.route,
+            modifier = Modifier.padding(innerPadding)
+        ) {
             composable(navitem.Home.route) {
-                HomeScreen(modifier = modifier.padding(innerPadding), navController = navController)
+                HomeScreen(navController = navController)
             }
             composable(
                 route = "note?noteId={noteId}",
@@ -35,7 +38,6 @@ fun navigation(modifier: Modifier){
             ) { backStackEntry ->
                 val noteId = backStackEntry.arguments?.getString("noteId")
                 DetailScreen(
-                    modifier = modifier.padding(innerPadding),
                     navController = navController,
                     noteId = noteId
                 )

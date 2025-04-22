@@ -40,7 +40,7 @@ import java.util.Locale
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun HomeScreen(modifier: Modifier,viewModel: NoteViewModel = hiltViewModel(),navController: NavController) {
+fun HomeScreen(viewModel: NoteViewModel = hiltViewModel(),navController: NavController) {
     val notes by viewModel.notes.collectAsState()
     val loading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()

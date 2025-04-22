@@ -5,5 +5,6 @@ import com.example.keepnote.domain.model.noteData
 import kotlinx.coroutines.flow.Flow
 
 interface NoteRepository {
-    suspend fun getNotes(): Flow<List<NoteEntity>>
+    fun getNotes(): Flow<List<NoteEntity>>
+    suspend fun refreshNotesFromApi()
 }

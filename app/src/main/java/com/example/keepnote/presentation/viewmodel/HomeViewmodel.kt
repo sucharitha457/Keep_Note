@@ -14,8 +14,11 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -25,35 +28,27 @@ class NoteViewModel @Inject constructor(
     private val noteRepository: NoteRepository
 ) : ViewModel() {
 
-    private val _notes = MutableStateFlow<List<NoteEntity>>(emptyList())
-    val notes: StateFlow<List<NoteEntity>> = _notes.asStateFlow()
-
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
-
-    private val _error = MutableStateFlow<String?>(null)
-    val error: StateFlow<String?> = _error.asStateFlow()
-
-    init {
-        getAllNotes()
-    }
-
-    private fun getAllNotes() {
-        viewModelScope.launch {
-            _isLoading.value = true
-            try {
-                noteRepository.getNotes().collect { fetchedNotes ->
-                    _notes.value = fetchedNotes
-                    _isLoading.value = false
-                }
-                Log.d("NoteViewModel", "Fetched notes: ${_notes.value}")
-            } catch (e: Exception) {
-                _error.value = e.message
-                Log.e("NoteViewModel", "Error fetching notes", e)
-            } finally {
-                _isLoading.value = false
-                Log.d("NoteViewModel - final", "Fetched notes: ${_notes.value}")
+    val notes: StateFlow<List<NoteEntity>> = noteRepository.getNotes()
+        .onEach { list ->
+            if (list.isEmpty()) {
+                refreshFromApi()
             }
         }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    private fun refreshFromApi() {
+        viewModelScope.launch {
+            noteRepository.refreshNotesFromApi()
+        }
     }
+
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading = _isLoading.asStateFlow()
+
+    private val _error = MutableStateFlow<String?>(null)
+    val error = _error.asStateFlow()
 }

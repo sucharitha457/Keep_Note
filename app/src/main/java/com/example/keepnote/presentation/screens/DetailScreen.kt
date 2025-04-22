@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -48,52 +49,77 @@ fun DetailScreen(
         }
     }
 
-    Column(modifier = modifier.padding(16.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            FloatingActionButton(onClick = { navController.popBackStack() }) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-            }
+    Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+    ) { paddingValues ->
 
-            Spacer(modifier = Modifier.weight(1f))
-
-            if (enableToEdit) {
-                FloatingActionButton(onClick = {
-                    if (title.trim().isNotEmpty() && description.trim().isNotEmpty()) {
-                        val newNote = NoteEntity(
-                            title = title,
-                            noteId = noteId ?: Random.nextInt(100000, 999999).toString(),
-                            archived = false,
-                            body = description,
-                            created_time = System.currentTimeMillis(),
-                            image = ""
-                        )
-
-                        detailViewmodel.saveNote(newNote)
-                        Log.d("DetailScreen", "Saved: $newNote")
-                        navController.popBackStack()
-                    } else {
-                        coroutineScope.launch {
-                            snackbarHostState.showSnackbar("Title and Description cannot be empty")
-                        }
-                    }
-                }) {
-                    Text("Save")
+        Column(modifier = modifier.padding(paddingValues).padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                FloatingActionButton(onClick = { navController.popBackStack() }) {
+                    Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                 }
 
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.weight(1f))
 
+                if (enableToEdit) {
+                    FloatingActionButton(onClick = {
+                        Log.d("DEBUG", "Title: '${title}' (${title.length})")
+                        Log.d("DEBUG", "Description: '${description}' (${description.length})")
+                        if (title.trim().length != 0 || description.trim().length != 0) {
+                            Log.d("DetailScreen", "Saved: ")
+                            val newNote = NoteEntity(
+                                title = title,
+                                noteId = noteId ?: Random.nextInt(100000, 999999).toString(),
+                                archived = false,
+                                body = description,
+                                created_time = System.currentTimeMillis(),
+                                image = ""
+                            )
+
+                            detailViewmodel.saveNote(newNote)
+                            Log.d("DetailScreen", "Saved: $newNote")
+                            navController.popBackStack()
+                        } else {
+                            Log.d("DetailScreen", "not saved ")
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar("Title and Description cannot be empty")
+                            }
+                        }
+                    }) {
+                        Text("Save")
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+                    FloatingActionButton(onClick = {
+
+                    }) {
+                        Icon(
+                            painter = painterResource(R.drawable.baseline_attach_file_24),
+                            contentDescription = "Attach File"
+                        )
+                    }
+                }
+                else {
+                    FloatingActionButton(onClick = {
+                        enableToEdit = true
+                    }) {
+                        Icon(Icons.Default.Edit, contentDescription = "Edit")
+                    }
+                }
                 if (!isNewNote) {
+                    Spacer(modifier = Modifier.width(8.dp))
                     FloatingActionButton(onClick = {
                         noteId?.toIntOrNull()?.let {
                             detailViewmodel.deleteNote(it)
                             navController.popBackStack()
                         }
                     }) {
-                        Text("Delete")
+                        Icon(Icons.Default.Delete, contentDescription = "Delete")
                     }
 
                     Spacer(modifier = Modifier.width(8.dp))
                 } else {
+                    Spacer(modifier = Modifier.width(8.dp))
                     FloatingActionButton(onClick = {
                         title = ""
                         description = ""
@@ -101,55 +127,39 @@ fun DetailScreen(
                     }) {
                         Text("Discard")
                     }
-
                     Spacer(modifier = Modifier.width(8.dp))
                 }
-
-                FloatingActionButton(onClick = {
-                    // Attach file action (not yet implemented)
-                }) {
-                    Icon(
-                        painter = painterResource(R.drawable.baseline_attach_file_24),
-                        contentDescription = "Attach File"
-                    )
-                }
-            } else {
-                FloatingActionButton(onClick = {
-                    enableToEdit = true
-                }) {
-                    Icon(Icons.Default.Edit, contentDescription = "Edit")
-                }
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            BasicTextField(
+                value = title,
+                onValueChange = { title = it },
+                textStyle = TextStyle(color = Color.Black, fontSize = 24.sp),
+                modifier = Modifier.fillMaxWidth(),
+                decorationBox = { innerTextField ->
+                    if (title.isEmpty()) {
+                        Text(text = "Title", color = Color.Gray, fontSize = 24.sp)
+                    }
+                    innerTextField()
+                }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            BasicTextField(
+                value = description,
+                onValueChange = { description = it },
+                textStyle = TextStyle(color = Color.Black, fontSize = 18.sp),
+                modifier = Modifier.fillMaxSize(),
+                decorationBox = { innerTextField ->
+                    if (description.isEmpty()) {
+                        Text(text = "Type here...", color = Color.Gray, fontSize = 18.sp)
+                    }
+                    innerTextField()
+                }
+            )
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        BasicTextField(
-            value = title,
-            onValueChange = { if (enableToEdit) title = it },
-            textStyle = TextStyle(color = Color.Black, fontSize = 24.sp),
-            modifier = Modifier.fillMaxWidth(),
-            decorationBox = { innerTextField ->
-                if (title.isEmpty()) {
-                    Text(text = "Title", color = Color.Gray, fontSize = 24.sp)
-                }
-                innerTextField()
-            }
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        BasicTextField(
-            value = description,
-            onValueChange = { if (enableToEdit) description = it },
-            textStyle = TextStyle(color = Color.Black, fontSize = 18.sp),
-            modifier = Modifier.fillMaxSize(),
-            decorationBox = { innerTextField ->
-                if (description.isEmpty()) {
-                    Text(text = "Type here...", color = Color.Gray, fontSize = 18.sp)
-                }
-                innerTextField()
-            }
-        )
     }
 }

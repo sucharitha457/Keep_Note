@@ -16,16 +16,11 @@ class NoteRepositoryImpl @Inject constructor(
     private val noteDao: NoteDao
 ) : NoteRepository {
 
-    override suspend fun getNotes(): Flow<List<NoteEntity>> {
-        return noteDao.getNotes().map { entities ->
-            if (entities.isEmpty()) {
-                refreshNotesFromApi()
-            }
-            entities
-        }
+    override fun getNotes(): Flow<List<NoteEntity>> {
+        return noteDao.getNotes()
     }
 
-    private suspend fun refreshNotesFromApi() {
+    override suspend fun refreshNotesFromApi() {
         try {
             val notesFromApi = apiService.getNotes()
             val noteEntities = notesFromApi.map { it.toEntity() }
@@ -34,4 +29,5 @@ class NoteRepositoryImpl @Inject constructor(
             e.printStackTrace()
         }
     }
+
 }

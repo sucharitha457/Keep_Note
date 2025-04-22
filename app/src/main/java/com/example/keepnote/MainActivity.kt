@@ -23,9 +23,7 @@ class MainActivity : ComponentActivity() {
 //        enableEdgeToEdge()
         setContent {
             KeepNoteTheme {
-                navigation(
-                    modifier = Modifier
-                )
+                navigation()
             }
         }
     }
