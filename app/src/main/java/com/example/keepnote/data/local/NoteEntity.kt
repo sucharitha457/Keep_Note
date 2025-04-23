@@ -11,5 +11,6 @@ data class NoteEntity (
     val title: String,
     val body: String,
     val created_time: Long,
-    val image: String?
+    val image: String?,
+    val isApiData: Boolean
 )

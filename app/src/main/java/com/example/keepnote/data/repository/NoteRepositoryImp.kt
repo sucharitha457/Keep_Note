@@ -1,5 +1,6 @@
 package com.example.keepnote.data.repository
 
+import android.util.Log
 import com.example.keepnote.data.local.NoteDao
 import com.example.keepnote.data.local.NoteEntity
 import com.example.keepnote.data.mapper.toDomain
@@ -23,11 +24,16 @@ class NoteRepositoryImpl @Inject constructor(
     override suspend fun refreshNotesFromApi() {
         try {
             val notesFromApi = apiService.getNotes()
-            val noteEntities = notesFromApi.map { it.toEntity() }
-            noteDao.insertNotes(noteEntities)
+            notesFromApi.forEach { noteDto ->
+                val noteEntity = noteDto.toEntity()
+                if (noteDao.checkIfNoteExists(noteEntity.noteId)) {
+                    noteDao.updateNote(noteEntity)
+                } else {
+                    noteDao.insertNote(noteEntity)
+                }
+            }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e("NoteRepo", "Error refreshing notes: ${e.message}", e)
         }
     }
-
 }

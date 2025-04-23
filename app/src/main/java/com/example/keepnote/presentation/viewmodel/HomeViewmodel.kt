@@ -31,6 +31,7 @@ class NoteViewModel @Inject constructor(
     val notes: StateFlow<List<NoteEntity>> = noteRepository.getNotes()
         .onEach { list ->
             if (list.isEmpty()) {
+                Log.d("NoteViewModel", "Initial load detected empty list, refreshing from API")
                 refreshFromApi()
             }
         }
@@ -40,10 +41,20 @@ class NoteViewModel @Inject constructor(
             initialValue = emptyList()
         )
 
-    private fun refreshFromApi() {
+    init {
         viewModelScope.launch {
             noteRepository.refreshNotesFromApi()
         }
+    }
+
+    fun refreshFromApi() {
+        viewModelScope.launch {
+            noteRepository.refreshNotesFromApi()
+        }
+    }
+
+    fun getNotes(): Flow<List<NoteEntity>>{
+        return noteRepository.getNotes()
     }
 
     private val _isLoading = MutableStateFlow(false)

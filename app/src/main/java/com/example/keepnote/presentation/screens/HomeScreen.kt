@@ -1,5 +1,6 @@
 package com.example.keepnote.presentation.screens
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -22,6 +23,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -29,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.keepnote.data.local.NoteEntity
 import com.example.keepnote.data.remote.dto.NoteDto
@@ -38,17 +41,18 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun HomeScreen(viewModel: NoteViewModel = hiltViewModel(),navController: NavController) {
-    val notes by viewModel.notes.collectAsState()
+    val notes by viewModel.notes.collectAsStateWithLifecycle()
     val loading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
 
     if (loading) {
         CircularProgressIndicator()
     }
-
+    LaunchedEffect (key1 = true){
+        Log.d("HomeScreen", "LaunchedEffect triggered $notes")
+    }
     error?.let {
         Text(text = "Error: $it")
     }

@@ -53,6 +53,7 @@ dependencies {
     implementation(libs.androidx.material3)
     //hilt
     implementation("com.google.dagger:hilt-android:2.51.1")
+    implementation(libs.androidx.foundation.layout.android)
     kapt("com.google.dagger:hilt-android-compiler:2.51.1")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
@@ -77,7 +78,11 @@ dependencies {
     implementation("androidx.paging:paging-runtime:3.3.6")
     implementation("androidx.paging:paging-compose:3.3.6")
     implementation("androidx.room:room-paging:2.7.0")
+    implementation (libs.accompanist.permissions)
+    implementation (libs.androidx.lifecycle.viewmodel.compose)
+    implementation (libs.androidx.runtime)
 
+    implementation("androidx.activity:activity-compose:1.6.0")
 
     implementation("androidx.compose.ui:ui:1.8.0-rc03")
 

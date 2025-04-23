@@ -22,7 +22,8 @@ fun noteData.toEntity(): NoteEntity {
         title = title,
         body = body,
         created_time = created_time,
-        image = image
+        image = image,
+        isApiData = true
     )
 }
 
@@ -44,6 +45,7 @@ fun NoteDto.toEntity(): NoteEntity {
         title = title,
         body = body,
         created_time = created_time,
-        image = image
+        image = image,
+        isApiData = true
     )
 }
