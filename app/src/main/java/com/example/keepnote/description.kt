@@ -33,36 +33,6 @@ import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 import com.example.keepnote.presentation.viewmodel.Markdown
 
-sealed class EditorBlock {
-    data class TextBlock(val text: String) : EditorBlock()
-    data class ImageBlock(val uri: Uri) : EditorBlock()
-}
-
-fun serializeEditorBlocks(blocks: List<EditorBlock>): String {
-    return buildString {
-        for (block in blocks) {
-            when (block) {
-                is EditorBlock.TextBlock -> append("text[${block.text}]")
-                is EditorBlock.ImageBlock -> append("image[${block.uri}]")
-                else -> {}
-            }
-        }
-    }
-}
-
-fun deserializeToEditorBlocks(data: String): List<EditorBlock> {
-    val regex = Regex("(text|image)\\[(.*?)]")
-    return regex.findAll(data).map { match ->
-        val type = match.groupValues[1]
-        val value = match.groupValues[2]
-        when (type) {
-            "text" -> EditorBlock.TextBlock(value)
-            "image" -> EditorBlock.ImageBlock(Uri.parse(value))
-            else -> error("Unknown block type")
-        }
-    }.toList()
-}
-
 @Composable
 fun RichTextEditorScreen(initialContent: String = "") {
     val blocks = remember { mutableStateListOf<EditorBlock>() }
@@ -174,6 +144,37 @@ fun RichTextEditorScreen(initialContent: String = "") {
             }
         }
     }
+}
+
+
+sealed class EditorBlock {
+    data class TextBlock(val text: String) : EditorBlock()
+    data class ImageBlock(val uri: Uri) : EditorBlock()
+}
+
+fun serializeEditorBlocks(blocks: List<EditorBlock>): String {
+    return buildString {
+        for (block in blocks) {
+            when (block) {
+                is EditorBlock.TextBlock -> append("text[${block.text}]")
+                is EditorBlock.ImageBlock -> append("image[${block.uri}]")
+                else -> {}
+            }
+        }
+    }
+}
+
+fun deserializeToEditorBlocks(data: String): List<EditorBlock> {
+    val regex = Regex("(text|image)\\[(.*?)]")
+    return regex.findAll(data).map { match ->
+        val type = match.groupValues[1]
+        val value = match.groupValues[2]
+        when (type) {
+            "text" -> EditorBlock.TextBlock(value)
+            "image" -> EditorBlock.ImageBlock(Uri.parse(value))
+            else -> error("Unknown block type")
+        }
+    }.toList()
 }
 
 @Composable

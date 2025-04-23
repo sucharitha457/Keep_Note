@@ -1,6 +1,7 @@
 package com.example.keepnote.presentation.screens
 
 import android.util.Log
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -17,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -41,6 +44,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+
 @Composable
 fun HomeScreen(viewModel: NoteViewModel = hiltViewModel(),navController: NavController) {
     val notes by viewModel.notes.collectAsStateWithLifecycle()
@@ -59,64 +63,134 @@ fun HomeScreen(viewModel: NoteViewModel = hiltViewModel(),navController: NavCont
     Box {
         displayNotes(notes,navController)
         FloatingActionButton(
-            onClick = {
-                navController.navigate(navitem.Note.route)
-            },
+            onClick = { navController.navigate(navitem.Note.route) },
             modifier = Modifier
-                .padding(40.dp)
-                .align(androidx.compose.ui.Alignment.BottomEnd)
+                .padding(24.dp)
+                .align(androidx.compose.ui.Alignment.BottomEnd),
+            containerColor = Color.Black
         ) {
+            Text("+", fontSize = 30.sp, color = Color.White)
+        }
+    }
+}
+
+@Composable
+fun displayNotes(notes: List<NoteEntity>, navController: NavController) {
+    LazyVerticalStaggeredGrid(
+        columns = StaggeredGridCells.Fixed(2),
+        modifier = Modifier.fillMaxSize().padding(8.dp),
+        verticalItemSpacing = 8.dp,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        var leftHeight = 0
+        var rightHeight = 0
+
+        items(notes.size) { index ->
+            val note = notes[index]
+            val fullWidth = (leftHeight == rightHeight)
+
+            noteCard(
+                note = note,
+                navController = navController,
+                fullWidth = fullWidth
+            )
+
+            val randomHeight = note.title.length % 3 + 1
+            if (fullWidth) {
+                leftHeight += randomHeight
+                rightHeight += randomHeight
+            } else if (leftHeight <= rightHeight) {
+                leftHeight += randomHeight
+            } else {
+                rightHeight += randomHeight
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun StaggeredGridItem(note: NoteEntity, navController: NavController, fullWidth: Boolean) {
+    val noteColors = listOf(
+        Color(0xFFFFF176), Color(0xFF81C784), Color(0xFF64B5F6),
+        Color(0xFFBA68C8), Color(0xFFFF8A65), Color(0xFFFFA726),
+        Color(0xFFA1887F), Color(0xFF4DD0E1)
+    )
+    val backgroundColor = noteColors[note.id % noteColors.size]
+
+    Card(
+        modifier = Modifier
+            .then(if (fullWidth) Modifier.fillMaxWidth() else Modifier)
+            .clickable {
+                navController.navigate(navitem.Note.withNoteId(note.id.toString()))
+            },
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(4.dp),
+        colors = CardDefaults.cardColors(containerColor = backgroundColor)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "+",
-                fontSize = 30.sp,
-                color = Color.White,
-                modifier = Modifier.padding(6.dp)
+                text = note.title,
+                fontSize = 18.sp,
+                color = Color.Black
+            )
+            Text(
+                text = convertUnixToPrettyDate(note.created_time),
+                fontSize = 14.sp,
+                color = Color.DarkGray,
+                modifier = Modifier.padding(top = 8.dp)
             )
         }
     }
 }
 
-@Composable
-fun displayNotes(notes: List<NoteEntity>,navController: NavController) {
-    LazyVerticalStaggeredGrid(
-        columns = StaggeredGridCells.Fixed(2),
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(8.dp),
-        verticalItemSpacing = 8.dp,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        items(notes.size) { index ->
-            noteCard(notes[index],navController = navController)
-        }
-    }
-}
 
 @Composable
-fun noteCard(note : NoteEntity,navController: NavController){
-    Card (
+fun noteCard(note: NoteEntity, navController: NavController, fullWidth: Boolean) {
+    val noteColors = listOf(
+        Color(0xFFFFF176),
+        Color(0xFF81C784),
+        Color(0xFF64B5F6),
+        Color(0xFFBA68C8),
+        Color(0xFFFF8A65),
+        Color(0xFFFFA726),
+        Color(0xFFA1887F),
+        Color(0xFF4DD0E1)
+    )
+    val backgroundColor = noteColors[note.id % noteColors.size]
+
+    Card(
         modifier = Modifier
-            .fillMaxWidth()
+            .then(
+                if (fullWidth) Modifier.fillMaxWidth()
+                else Modifier.fillMaxWidth(0.5f)
+            )
             .wrapContentHeight()
             .clickable {
                 navController.navigate(navitem.Note.withNoteId(note.id.toString()))
             },
+        colors = CardDefaults.cardColors(containerColor = backgroundColor),
+        shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp)
-        ) {
-            Text(note.title,modifier = Modifier.padding(8.dp), fontSize = 30.sp)
-            Text(text = convertUnixToDateTime( note.created_time))
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = note.title,
+                fontSize = 18.sp,
+                color = Color.Black
+            )
+            Text(
+                text = convertUnixToPrettyDate(note.created_time),
+                fontSize = 14.sp,
+                color = Color.DarkGray,
+                modifier = Modifier.padding(top = 8.dp)
+            )
         }
     }
 }
 
-
-fun convertUnixToDateTime(unixTime: Long): String {
+fun convertUnixToPrettyDate(unixTime: Long): String {
     val date = Date(unixTime * 1000)
-    val format = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+    val format = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
     return format.format(date)
 }
