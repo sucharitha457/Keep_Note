@@ -170,7 +170,7 @@ fun DetailScreen(
                                 noteId = existingNoteId,
                                 archived = false,
                                 body = savedDesription,
-                                created_time = System.currentTimeMillis(),
+                                created_time = System.currentTimeMillis() / 1000,
                                 image = "",
                                 isApiData = isApiData
                             )

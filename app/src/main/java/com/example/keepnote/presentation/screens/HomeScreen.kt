@@ -100,43 +100,6 @@ fun displayNotes(notes: List<NoteEntity>, navController: NavController) {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun StaggeredGridItem(note: NoteEntity, navController: NavController, fullWidth: Boolean) {
-    val noteColors = listOf(
-        Color(0xFFFFF176), Color(0xFF81C784), Color(0xFF64B5F6),
-        Color(0xFFBA68C8), Color(0xFFFF8A65), Color(0xFFFFA726),
-        Color(0xFFA1887F), Color(0xFF4DD0E1)
-    )
-    val backgroundColor = noteColors[note.id % noteColors.size]
-
-    Card(
-        modifier = Modifier
-            .then(if (fullWidth) Modifier.fillMaxWidth() else Modifier)
-            .clickable {
-                navController.navigate(navitem.Note.withNoteId(note.id.toString()))
-            },
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(4.dp),
-        colors = CardDefaults.cardColors(containerColor = backgroundColor)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = note.title,
-                fontSize = 18.sp,
-                color = Color.Black
-            )
-            Text(
-                text = convertUnixToPrettyDate(note.created_time),
-                fontSize = 14.sp,
-                color = Color.DarkGray,
-                modifier = Modifier.padding(top = 8.dp)
-            )
-        }
-    }
-}
-
-
 @Composable
 fun noteCard(note: NoteEntity, navController: NavController, fullWidth: Boolean) {
     val noteColors = listOf(
@@ -172,7 +135,7 @@ fun noteCard(note: NoteEntity, navController: NavController, fullWidth: Boolean)
                 color = Color.Black
             )
             Text(
-                text = convertUnixToPrettyDate(note.created_time),
+                text = convertUnixToDate(note.created_time),
                 fontSize = 14.sp,
                 color = Color.DarkGray,
                 modifier = Modifier.padding(top = 8.dp)
@@ -181,7 +144,8 @@ fun noteCard(note: NoteEntity, navController: NavController, fullWidth: Boolean)
     }
 }
 
-fun convertUnixToPrettyDate(unixTime: Long): String {
+fun convertUnixToDate(unixTime: Long): String {
+    Log.d("HomeScreen", "convertUnixToDate: $unixTime")
     val date = Date(unixTime * 1000)
     val format = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
     return format.format(date)
