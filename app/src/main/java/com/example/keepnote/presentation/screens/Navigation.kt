@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -12,7 +13,7 @@ import androidx.navigation.navArgument
 
 
 @Composable
-fun navigation(){
+fun Navigation(){
     val navController = rememberNavController()
 
     Scaffold(
@@ -42,6 +43,30 @@ fun navigation(){
                     noteId = noteId
                 )
             }
+            composable(
+                route = "image?imageList={imageList}&startIndex={startIndex}",
+                arguments = listOf(
+                    navArgument("imageList") {
+                        nullable = true
+                        defaultValue = null
+                    },
+                    navArgument("startIndex") {
+                        type = NavType.IntType
+                        defaultValue = 0
+                    }
+                ),
+            ) {
+                val encodedList = it.arguments?.getString("imageList")
+                val imageList = encodedList?.split(",") ?: emptyList()
+                val startIndex = it.arguments?.getInt("startIndex") ?: 0
+
+                ImageScreen(
+                    images = imageList,
+                    startIndex = startIndex,
+                    navController = navController
+                )
+            }
+
         }
     }
 

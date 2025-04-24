@@ -3,13 +3,10 @@ package com.example.keepnote.data.repository
 import android.util.Log
 import com.example.keepnote.data.local.NoteDao
 import com.example.keepnote.data.local.NoteEntity
-import com.example.keepnote.data.mapper.toDomain
 import com.example.keepnote.data.mapper.toEntity
 import com.example.keepnote.data.remote.api.ApiSerivce
-import com.example.keepnote.domain.model.noteData
 import com.example.keepnote.domain.repository.NoteRepository
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import javax.inject.Inject
 

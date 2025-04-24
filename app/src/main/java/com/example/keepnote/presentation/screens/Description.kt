@@ -31,8 +31,8 @@ import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
-import kotlinx.coroutines.delay
 
 @Composable
 fun RichTextEditorScreen(initialContent: String = "") {
@@ -85,30 +85,30 @@ fun RichTextEditorScreen(initialContent: String = "") {
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        RichEditor(
-            editorBlocks = blocks,
-            onTextChange = { index, newText ->
-                if (index in blocks.indices) {
-                    blocks[index] = EditorBlock.TextBlock(newText)
-                }
-            },
-            onBackspaceAtStart = { index ->
-                if (index > 0 &&
-                    blocks.getOrNull(index) is EditorBlock.TextBlock &&
-                    blocks.getOrNull(index - 1) is EditorBlock.ImageBlock
-                ) {
-                    blocks.removeAt(index)
-                    focusRequesters.removeAt(index)
-
-                    blocks.removeAt(index - 1)
-                    focusRequesters.removeAt(index - 1)
-
-                    pendingFocusIndex.value = (index - 2).coerceAtLeast(0)
-                }
-            },
-            focusRequesters = focusRequesters,
-            enableToEdit = true
-        )
+//        RichEditor(
+//            editorBlocks = blocks,
+//            onTextChange = { index, newText ->
+//                if (index in blocks.indices) {
+//                    blocks[index] = EditorBlock.TextBlock(newText)
+//                }
+//            },
+//            onBackspaceAtStart = { index ->
+//                if (index > 0 &&
+//                    blocks.getOrNull(index) is EditorBlock.TextBlock &&
+//                    blocks.getOrNull(index - 1) is EditorBlock.ImageBlock
+//                ) {
+//                    blocks.removeAt(index)
+//                    focusRequesters.removeAt(index)
+//
+//                    blocks.removeAt(index - 1)
+//                    focusRequesters.removeAt(index - 1)
+//
+//                    pendingFocusIndex.value = (index - 2).coerceAtLeast(0)
+//                }
+//            },
+//            focusRequesters = focusRequesters,
+//            enableToEdit = true
+//        )
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -374,9 +374,11 @@ fun RichEditor(
     onTextChange: (Int, String) -> Unit,
     onBackspaceAtStart: (Int) -> Unit,
     focusRequesters: List<FocusRequester>,
-    enableToEdit: Boolean
+    enableToEdit: Boolean,
+    navController: NavController
 ) {
-    var imageurilist = mutableListOf<Uri>()
+    var imageurilist = mutableListOf<String>()
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -397,6 +399,7 @@ fun RichEditor(
                 }
 
                 is EditorBlock.ImageBlock -> {
+                    Log.d("ImageBlock", "Image URI: ${block.uri}")
                     Image(
                         painter = rememberAsyncImagePainter(model = block.uri),
                         contentDescription = null,
@@ -404,16 +407,21 @@ fun RichEditor(
                             .fillMaxWidth()
                             .height(200.dp)
                             .clickable {
-
+                                navController.navigate(navToImageScreen(imageurilist,imageurilist.indexOf(block.uri.toString())))
                             }
                             .clip(RoundedCornerShape(8.dp))
                             .padding(vertical = 8.dp)
                     )
-                    imageurilist.add(block.uri)
+                    imageurilist.add(block.uri.toString())
                 }
 
                 else -> Unit
             }
         }
     }
+}
+
+fun navToImageScreen(imageList: List<String>,startIndex: Int = 0): String {
+    val encodedList = imageList.joinToString(separator = ",")
+    return "image?imageList=$encodedList&startIndex=$startIndex"
 }

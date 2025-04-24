@@ -2,10 +2,12 @@ package com.example.keepnote.presentation.screens
 
 import EditorBlock
 import RichEditor
+import android.content.Intent
 import android.net.Uri
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
@@ -19,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
@@ -54,6 +57,7 @@ fun DetailScreen(
             serializeEditorBlocks(blocks)
         }
     }
+    val context = LocalContext.current
     val focusRequesters = remember { mutableStateListOf<FocusRequester>() }
     val pendingFocusIndex = remember { mutableStateOf<Int?>(null) }
 
@@ -102,6 +106,15 @@ fun DetailScreen(
     val imagePickerLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
             uri?.let {
+                try {
+                    context.contentResolver.takePersistableUriPermission(
+                        it,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+                } catch (e: SecurityException) {
+                    e.printStackTrace()
+                }
+
                 val lastIndex = blocks.lastIndex
                 val lastBlock = blocks.getOrNull(lastIndex)
 
@@ -131,7 +144,9 @@ fun DetailScreen(
                 .padding(16.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                FloatingActionButton(onClick = { navController.popBackStack() }) {
+                IconButton(onClick = { navController.popBackStack() },
+                    modifier = Modifier.padding(8.dp).background(color = Color.White)
+                ) {
                     Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                 }
 
@@ -250,7 +265,8 @@ fun DetailScreen(
                         pendingFocusIndex.value = (index - 2).coerceAtLeast(0)
                     }
                 },
-                focusRequesters = focusRequesters
+                focusRequesters = focusRequesters,
+                navController = navController
             )
         }
     }

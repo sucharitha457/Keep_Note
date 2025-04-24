@@ -51,6 +51,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+
     //hilt
     implementation("com.google.dagger:hilt-android:2.51.1")
     implementation(libs.androidx.foundation.layout.android)
@@ -86,8 +87,11 @@ dependencies {
 
     implementation("androidx.compose.ui:ui:1.8.0-rc03")
 
-    implementation ("com.google.accompanist:accompanist-navigation-animation:0.34.0")
-    implementation ("com.google.accompanist:accompanist-shared-element:0.34.0")
+    implementation ("com.google.accompanist:accompanist-pager:0.32.0")
+    implementation ("com.google.accompanist:accompanist-pager-indicators:0.32.0")
+
+    implementation(libs.accompanist.navigation.animation)
+    implementation(libs.google.accompanist.navigation.animation)
 
     implementation("androidx.compose.foundation:foundation:1.7.8")
     testImplementation(libs.junit)

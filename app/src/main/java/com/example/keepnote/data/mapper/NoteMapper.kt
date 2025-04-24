@@ -2,15 +2,15 @@ package com.example.keepnote.data.mapper
 
 import com.example.keepnote.data.local.NoteEntity
 import com.example.keepnote.data.remote.dto.NoteDto
-import com.example.keepnote.domain.model.noteData
+import com.example.keepnote.domain.model.NoteData
 
-fun NoteDto.toDomain(): noteData {
-    return noteData(
+fun NoteDto.toDomain(): NoteData {
+    return NoteData(
         id = id,
         archived = archived,
         title = title,
         body = body,
-        created_time = created_time,
+        createdTime = created_time,
         image = image
     )
 }
