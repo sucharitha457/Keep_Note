@@ -31,6 +31,7 @@ import androidx.navigation.NavController
 import com.example.keepnote.R
 import com.example.keepnote.data.local.NoteEntity
 import com.example.keepnote.presentation.viewmodel.DetailViewmodel
+import com.example.keepnote.ui.theme.Primary
 import deserializeToEditorBlocks
 import kotlinx.coroutines.launch
 import serializeEditorBlocks
@@ -135,17 +136,16 @@ fun DetailScreen(
             }
         }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
-    ) { paddingValues ->
+//    Scaffold(
+//        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+//    ) { paddingValues ->
         Column(
             modifier = modifier
-                .padding(paddingValues)
-                .padding(16.dp)
+                .padding(horizontal = 10.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { navController.popBackStack() },
-                    modifier = Modifier.padding(8.dp).background(color = Color.White)
+                    modifier = Modifier
                 ) {
                     Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                 }
@@ -153,7 +153,10 @@ fun DetailScreen(
                 Spacer(modifier = Modifier.weight(1f))
 
                 if (enableToEdit || isNewNote) {
-                    FloatingActionButton(onClick = {
+                    FloatingActionButton(
+                        containerColor = Primary,
+                        contentColor = Color.White,
+                        onClick = {
                         Log.d("DEBUG", "Title: '${title}' (${title.length})")
                         Log.d(
                             "DEBUG",
@@ -188,7 +191,10 @@ fun DetailScreen(
                         Text("Save")
                     }
                     Spacer(modifier = Modifier.width(8.dp))
-                    FloatingActionButton(onClick = {
+                    FloatingActionButton(
+                        containerColor = Primary,
+                        contentColor = Color.White,
+                        onClick = {
                         imagePickerLauncher.launch("image/*")
                     }) {
                         Icon(
@@ -197,7 +203,10 @@ fun DetailScreen(
                         )
                     }
                 } else {
-                    FloatingActionButton(onClick = {
+                    FloatingActionButton(
+                        containerColor = Primary,
+                        contentColor = Color.White,
+                        onClick = {
                         enableToEdit = true
                     }) {
                         Icon(Icons.Default.Edit, contentDescription = "Edit")
@@ -205,7 +214,10 @@ fun DetailScreen(
                 }
                 if (!isNewNote && isApiData == false) {
                     Spacer(modifier = Modifier.width(8.dp))
-                    FloatingActionButton(onClick = {
+                    FloatingActionButton(
+                        containerColor = Primary,
+                        contentColor = Color.White,
+                        onClick = {
                         noteId?.toIntOrNull()?.let {
                             detailViewmodel.deleteNote(it)
                             navController.popBackStack()
@@ -217,7 +229,10 @@ fun DetailScreen(
                     Spacer(modifier = Modifier.width(8.dp))
                 } else if (isNewNote) {
                     Spacer(modifier = Modifier.width(8.dp))
-                    FloatingActionButton(onClick = {
+                    FloatingActionButton(
+                        containerColor = Primary,
+                        contentColor = Color.White,
+                        onClick = {
                         title = ""
                         navController.popBackStack()
                     }) {
@@ -233,7 +248,7 @@ fun DetailScreen(
                 value = title,
                 onValueChange = { title = it },
                 textStyle = TextStyle(color = Color.Black, fontSize = 24.sp),
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
                 decorationBox = { innerTextField ->
                     if (title.isEmpty()) {
                         Text(text = "Title", color = Color.Gray, fontSize = 24.sp)
@@ -269,6 +284,6 @@ fun DetailScreen(
                 navController = navController
             )
         }
-    }
+//    }
 }
 

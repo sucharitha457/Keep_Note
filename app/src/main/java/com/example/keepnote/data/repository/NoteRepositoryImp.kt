@@ -1,6 +1,7 @@
 package com.example.keepnote.data.repository
 
 import android.util.Log
+import androidx.lifecycle.viewModelScope
 import com.example.keepnote.data.local.NoteDao
 import com.example.keepnote.data.local.NoteEntity
 import com.example.keepnote.data.mapper.toEntity
@@ -8,6 +9,7 @@ import com.example.keepnote.data.remote.api.ApiSerivce
 import com.example.keepnote.domain.repository.NoteRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 class NoteRepositoryImpl @Inject constructor(
@@ -21,6 +23,21 @@ class NoteRepositoryImpl @Inject constructor(
                 Log.d("NoteRepository", "Notes emitted: $notes")
             }
     }
+    override suspend fun saveNote(note : NoteEntity){
+        noteDao.insertNote(note)
+    }
+
+    override suspend fun updateNote(note : NoteEntity){
+        noteDao.updateNote(note)
+    }
+
+    override suspend fun getNote(noteId: Int): NoteEntity {
+        return noteDao.getNoteById(noteId)
+    }
+
+    override suspend fun deleteNote(noteId : Int){
+        noteDao.deleteNote(noteId)
+    }
 
     override suspend fun refreshNotesFromApi() {
         try {
@@ -28,7 +45,7 @@ class NoteRepositoryImpl @Inject constructor(
             notesFromApi.forEach { noteDto ->
                 val noteEntity = noteDto.toEntity()
                 if (noteDao.checkIfNoteExists(noteEntity.noteId)) {
-                    noteDao.updateNote(noteEntity)
+                    updateNote(noteEntity)
                 } else {
                     noteDao.insertNote(noteEntity)
                 }

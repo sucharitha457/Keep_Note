@@ -147,7 +147,7 @@ fun noteCard(note: NoteEntity, navController: NavController, fullWidth: Boolean)
         Color(0xFFFF8A65),
         Color(0xFFFFA726),
         Color(0xFFA1887F),
-        Color(0xFF4DD0E1)
+        Color(0xFF4DD0E1),
     )
     val backgroundColor = noteColors[note.id % noteColors.size]
 

@@ -2,18 +2,14 @@ package com.example.keepnote.presentation.screens
 
 import android.util.Log
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
-import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -30,6 +26,7 @@ import kotlinx.coroutines.launch
 
 
 private const val TAG = "ImageScreen"
+
 @Composable
 fun ImageScreen(images: List<String>, navController: NavHostController, startIndex: Int = 0) {
     val pagerState = rememberPagerState(
@@ -57,45 +54,39 @@ fun ImageScreen(images: List<String>, navController: NavHostController, startInd
         Log.d("TAG", "ImageScreen: isImageScaled:$isImageScaled | scale:$scale | zoomOut:$zoomOut")
     }
 
-    var zoom by remember { mutableStateOf(1f) }
-    val imagemodifier = Modifier
+    val imageModifier = Modifier
         .fillMaxSize()
-//        .graphicsLa
+        .pointerInput(Unit) {
+            detectTransformGestures(
+                onGesture = { _, pan, gestureZoom, _ ->
 
-//                    .pointerInput(Unit) {
-//                        detectHorizontalDragGestures { _, dragAmount ->
-//                            scope.launch {
-//                                Log.d("TAG", "detectHorizontalDragGestures: $zoomOut")
-//                                if (zoomOut) {
-//                                    if (dragAmount > 0) {
-////                                        pagerState.animateScrollToPage(pagerState.currentPage + 1)
-////                                    } else {
-////                                        pagerState.animateScrollToPage(pagerState.currentPage - 1)
-//                                    }
-//                                }
-//                            }
-//                        }
-//                    }
+                    scale = (scale * gestureZoom).coerceIn(scaleMin, scaleMax)
 
-//        .pointerInput(Unit) {
-//            detectTransformGestures(
-//                onGesture = { _, pan, gestureZoom, _ ->
-//                    // Apply zoom limit
-//                    zoom = zoom.coerceIn(scaleMin, scaleMax)
-//
-//                    if (zoom > 1f) {
-//                        offsetX += pan.x * 6
-//                        offsetY += pan.y * 6
-//
-//                    } else {
-//                        // Reset offset when zoom is at minimum (1f)
-//                        offsetX = 1f
-//                        offsetY = 1f
-//                    }
-//                }
-//            )
-//        }
-//        .transformable(state = state)
+                    if (scale == 1f) {
+                        offsetX += pan.x * 6
+                        offsetY += pan.y * 6
+                    } else {
+                        offsetX = 1f
+                        offsetY = 1f
+                    }
+
+                    if (scale == 1f) {
+                        scope.launch {
+                            val threshold = 20f
+                            if (pan.x > threshold) {
+                                pagerState.animateScrollToPage(pagerState.currentPage - 1)
+                            } else if (pan.x < -threshold) {
+                                pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                            }
+                        }
+                    }
+                }
+            )
+        }
+        .graphicsLayer {
+            scaleX = scale
+            scaleY = scale
+        }
 
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -116,7 +107,7 @@ fun ImageScreen(images: List<String>, navController: NavHostController, startInd
         }
 
         HorizontalPager(
-//            userScrollEnabled = zoomOut,
+            userScrollEnabled = false,
             state = pagerState,
             pageSize = PageSize.Fill,
             modifier = Modifier
@@ -141,7 +132,7 @@ fun ImageScreen(images: List<String>, navController: NavHostController, startInd
             Image(
                 painter = rememberAsyncImagePainter(uri),
                 contentDescription = null,
-                modifier = imagemodifier
+                modifier = imageModifier
             )
         }
     }

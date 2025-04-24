@@ -5,35 +5,35 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.keepnote.data.local.AppDatabase
 import com.example.keepnote.data.local.NoteEntity
+import com.example.keepnote.domain.repository.NoteRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class DetailViewmodel @Inject constructor(
-    private val database: AppDatabase
+    val repository: NoteRepository
 ) : ViewModel(){
 
     fun saveNote(note : NoteEntity){
         viewModelScope.launch {
-            database.noteDao().insertNote(note)
-            Log.d( "detail screen", "saveNote: ${note.title}")
+            repository.saveNote(note)
         }
     }
 
     fun updateNote(note : NoteEntity){
         viewModelScope.launch {
-            database.noteDao().updateNote(note)
+            repository.updateNote(note)
         }
     }
 
     suspend fun getNote(noteId: Int): NoteEntity {
-        return database.noteDao().getNoteById(noteId)
+        return repository.getNote(noteId)
     }
 
     fun deleteNote(noteId : Int){
         viewModelScope.launch {
-            database.noteDao().deleteNote(noteId)
+            repository.deleteNote(noteId)
         }
     }
 }

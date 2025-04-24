@@ -1,3 +1,4 @@
+import android.content.Intent
 import android.net.Uri
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,6 +23,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
@@ -28,6 +31,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -213,6 +217,25 @@ fun deserializeToEditorBlocks(data: String): List<EditorBlock> {
 }
 
 @Composable
+fun ClickableMarkdownText(text: String) {
+    val annotated = Markdown(text)
+    val context = LocalContext.current
+
+    ClickableText(
+        text = annotated,
+        style = TextStyle(fontSize = 18.sp),
+        onClick = { offset ->
+            annotated.getStringAnnotations(tag = "URL", start = offset, end = offset)
+                .firstOrNull()?.let {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(it.item))
+                    context.startActivity(intent)
+                }
+        }
+    )
+}
+
+
+@Composable
 fun EditorTextField(
     index: Int,
     text: String,
@@ -323,51 +346,54 @@ fun EditorTextField(
 
 fun Markdown(text: String): AnnotatedString {
     return buildAnnotatedString {
-        val regex = Regex("""(\*\*[^*]*\*\*|\[[^\]]*]\([^\)]*\)|\[[^\]]*[^]\(]*)""")
         var lastIndex = 0
+
+        // Matches: **bold**, [text](url)
+        val regex = Regex("""\*\*(.*?)\*\*|\[([^\]]+)]\(([^)]+)\)""")
 
         regex.findAll(text).forEach { match ->
             val start = match.range.first
             val end = match.range.last + 1
-            val matchText = match.value
 
-            append(text.substring(lastIndex, start))
+            // Append any plain text before match
+            if (lastIndex < start) {
+                append(text.substring(lastIndex, start))
+            }
 
             when {
-                matchText.startsWith("**") && matchText.endsWith("**") -> {
-                    val boldText = matchText.removeSurrounding("**")
+                match.groups[1] != null -> {
+                    // **bold**
                     withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                        append(boldText)
+                        append(match.groups[1]!!.value)
                     }
                 }
-                matchText.startsWith("[") && matchText.contains("](") && matchText.endsWith(")") -> {
-                    val linkRegex = Regex("""\[([^\]]*)]\(([^)]*)\)""")
-                    val linkMatch = linkRegex.find(matchText)
-                    val displayText = linkMatch?.groupValues?.get(1) ?: matchText
-                    val url = linkMatch?.groupValues?.get(2) ?: ""
+
+                match.groups[2] != null && match.groups[3] != null -> {
+                    // [text](url)
+                    val displayText = match.groups[2]!!.value
+                    val url = match.groups[3]!!.value
                     pushStringAnnotation(tag = "URL", annotation = url)
-                    withStyle(style = SpanStyle(color = Color.Blue)) {
+                    withStyle(style = SpanStyle(color = Color.Blue, textDecoration = TextDecoration.Underline)) {
                         append(displayText)
                     }
                     pop()
                 }
-                matchText.startsWith("[") -> {
-                    val partialText = matchText.removeSurrounding("[", "]")
-                    withStyle(style = SpanStyle(color = Color.Red)) {
-                        append(partialText)
-                    }
+
+                else -> {
+                    append(match.value)
                 }
-                else -> append(matchText)
             }
 
             lastIndex = end
         }
 
+        // Append any trailing text
         if (lastIndex < text.length) {
             append(text.substring(lastIndex))
         }
     }
 }
+
 @Composable
 fun RichEditor(
     editorBlocks: SnapshotStateList<EditorBlock>,
@@ -388,14 +414,18 @@ fun RichEditor(
         editorBlocks.forEachIndexed { index, block ->
             when (block) {
                 is EditorBlock.TextBlock -> {
-                    EditorTextField(
-                        index = index,
-                        text = block.text,
-                        enableToEdit = enableToEdit,
-                        onTextChange = onTextChange,
-                        onBackspaceAtStart = onBackspaceAtStart,
-                        focusRequester = focusRequesters.getOrNull(index) ?: FocusRequester()
-                    )
+                    if (enableToEdit) {
+                        EditorTextField(
+                            index = index,
+                            text = block.text,
+                            enableToEdit = enableToEdit,
+                            onTextChange = onTextChange,
+                            onBackspaceAtStart = onBackspaceAtStart,
+                            focusRequester = focusRequesters.getOrNull(index) ?: FocusRequester()
+                        )
+                    }else{
+                        ClickableMarkdownText(text = block.text)
+                    }
                 }
 
                 is EditorBlock.ImageBlock -> {
