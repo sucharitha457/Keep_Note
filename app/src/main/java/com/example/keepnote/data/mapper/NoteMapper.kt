@@ -15,28 +15,6 @@ fun NoteDto.toDomain(): noteData {
     )
 }
 
-fun noteData.toEntity(): NoteEntity {
-    return NoteEntity(
-        noteId = id,
-        archived = archived,
-        title = title,
-        body = body,
-        created_time = created_time,
-        image = image,
-        isApiData = true
-    )
-}
-
-fun NoteEntity.toDomain(): noteData {
-    return noteData(
-        id = noteId,
-        archived = archived,
-        title = title,
-        body = body,
-        created_time = created_time,
-        image = image
-    )
-}
 
 fun NoteDto.toEntity(): NoteEntity {
     return NoteEntity(

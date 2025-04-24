@@ -47,16 +47,18 @@ import java.util.Locale
 
 @Composable
 fun HomeScreen(viewModel: NoteViewModel = hiltViewModel(),navController: NavController) {
-    val notes by viewModel.notes.collectAsStateWithLifecycle()
+    val notes by viewModel.getNotes().collectAsState(initial = emptyList())
     val loading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
 
     if (loading) {
         CircularProgressIndicator()
     }
+
     LaunchedEffect (key1 = true){
         Log.d("HomeScreen", "LaunchedEffect triggered $notes")
     }
+
     error?.let {
         Text(text = "Error: $it")
     }

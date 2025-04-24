@@ -25,36 +25,18 @@ import javax.inject.Inject
 
 @HiltViewModel
 class NoteViewModel @Inject constructor(
-    private val noteRepository: NoteRepository
+    private val noteRepository: NoteRepository,
+    private val database: AppDatabase
 ) : ViewModel() {
 
-    val notes: StateFlow<List<NoteEntity>> = noteRepository.getNotes()
-        .onEach { list ->
-            if (list.isEmpty()) {
-                Log.d("NoteViewModel", "Initial load detected empty list, refreshing from API")
-                refreshFromApi()
-            }
-        }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
 
-    init {
-        viewModelScope.launch {
-            noteRepository.refreshNotesFromApi()
-        }
-    }
+
+    fun getNotes(): Flow<List<NoteEntity>> = noteRepository.getNotes()
 
     fun refreshFromApi() {
         viewModelScope.launch {
             noteRepository.refreshNotesFromApi()
         }
-    }
-
-    fun getNotes(): Flow<List<NoteEntity>>{
-        return noteRepository.getNotes()
     }
 
     private val _isLoading = MutableStateFlow(false)

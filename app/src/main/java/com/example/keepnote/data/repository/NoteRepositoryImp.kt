@@ -10,6 +10,7 @@ import com.example.keepnote.domain.model.noteData
 import com.example.keepnote.domain.repository.NoteRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import javax.inject.Inject
 
 class NoteRepositoryImpl @Inject constructor(
@@ -19,6 +20,9 @@ class NoteRepositoryImpl @Inject constructor(
 
     override fun getNotes(): Flow<List<NoteEntity>> {
         return noteDao.getNotes()
+            .onEach { notes ->
+                Log.d("NoteRepository", "Notes emitted: $notes")
+            }
     }
 
     override suspend fun refreshNotesFromApi() {

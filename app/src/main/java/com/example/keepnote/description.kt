@@ -3,19 +3,15 @@ import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.MutatePriority
-import androidx.compose.foundation.gestures.ScrollableState
-import androidx.compose.foundation.gestures.scrollable
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
@@ -25,13 +21,18 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
-import com.example.keepnote.presentation.viewmodel.Markdown
+import kotlinx.coroutines.delay
 
 @Composable
 fun RichTextEditorScreen(initialContent: String = "") {
@@ -105,7 +106,8 @@ fun RichTextEditorScreen(initialContent: String = "") {
                     pendingFocusIndex.value = (index - 2).coerceAtLeast(0)
                 }
             },
-            focusRequesters = focusRequesters
+            focusRequesters = focusRequesters,
+            enableToEdit = true
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -156,25 +158,58 @@ fun serializeEditorBlocks(blocks: List<EditorBlock>): String {
     return buildString {
         for (block in blocks) {
             when (block) {
-                is EditorBlock.TextBlock -> append("text[${block.text}]")
-                is EditorBlock.ImageBlock -> append("image[${block.uri}]")
+                is EditorBlock.TextBlock -> {
+                    // Escape [ and ] in text to avoid regex issues
+                    val escapedText = block.text.replace("[", "\\[").replace("]", "\\]")
+                    append("text[$escapedText]")
+                    Log.d("Serialize", "Serialized text block: $escapedText")
+                }
+                is EditorBlock.ImageBlock -> {
+                    append("image[${block.uri}]")
+                    Log.d("Serialize", "Serialized image block: ${block.uri}")
+                }
+
                 else -> {}
             }
         }
-    }
+    }.also { Log.d("Serialize", "Full serialized string: $it") }
 }
 
 fun deserializeToEditorBlocks(data: String): List<EditorBlock> {
-    val regex = Regex("(text|image)\\[(.*?)]")
-    return regex.findAll(data).map { match ->
+    val blocks = mutableListOf<EditorBlock>()
+    var currentIndex = 0
+    if (data.isBlank()) {
+        Log.w("Deserialize", "Empty input data")
+        return emptyList()
+    }
+    val blockRegex = Regex("(text|image)\\[(.*?)](?=(text|image)\\[|$)", RegexOption.DOT_MATCHES_ALL)
+
+    Log.d("Deserialize", "Input data: $data")
+
+    blockRegex.findAll(data).forEach { match ->
         val type = match.groupValues[1]
-        val value = match.groupValues[2]
-        when (type) {
-            "text" -> EditorBlock.TextBlock(value)
-            "image" -> EditorBlock.ImageBlock(Uri.parse(value))
-            else -> error("Unknown block type")
+        var value = match.groupValues[2]
+
+        if (type == "text") {
+            value = value.replace("\\[", "[").replace("\\]", "]")
         }
-    }.toList()
+
+        Log.d("Deserialize", "Matched block: type=$type, value=$value")
+
+        when (type) {
+            "text" -> blocks.add(EditorBlock.TextBlock(value))
+            "image" -> blocks.add(EditorBlock.ImageBlock(Uri.parse(value)))
+            else -> Log.e("Deserialize", "Unknown block type: $type")
+        }
+
+        currentIndex = match.range.last + 1
+    }
+
+    if (currentIndex < data.length) {
+        Log.w("Deserialize", "Unprocessed data: ${data.substring(currentIndex)}")
+    }
+
+    return blocks.also { Log.d("Deserialize", "Deserialized blocks: $it") }
 }
 
 @Composable
@@ -183,10 +218,10 @@ fun EditorTextField(
     text: String,
     onTextChange: (Int, String) -> Unit,
     onBackspaceAtStart: (Int) -> Unit,
-    focusRequester: FocusRequester
+    focusRequester: FocusRequester,
+    enableToEdit: Boolean
 ) {
     var internalText by remember { mutableStateOf(text) }
-
     Column {
         BasicTextField(
             value = internalText,
@@ -194,6 +229,7 @@ fun EditorTextField(
                 internalText = it
                 onTextChange(index, it)
             },
+            enabled = enableToEdit,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 4.dp)
@@ -218,58 +254,65 @@ fun EditorTextField(
                 }
             },
             visualTransformation = { originalText ->
-                val transformedText = Markdown(originalText.text)
+                val annotated = Markdown(originalText.text)
+
                 TransformedText(
-                    text = transformedText,
+                    text = annotated,
                     offsetMapping = object : OffsetMapping {
                         override fun originalToTransformed(offset: Int): Int {
-                            var count = 0
-                            var transformedIndex = 0
-                            val regex = Regex("""(\*\*[^*]+\*\*|\[([^\]]+)]\([^\)]+\))""")
-                            regex.findAll(originalText.text).forEach { match ->
-                                if (match.range.first < offset) {
-                                    val matchedText = match.value
-                                    if (matchedText.startsWith("**") && matchedText.endsWith("**")) {
-                                        transformedIndex -= 4
-                                    } else if (matchedText.startsWith("[") && matchedText.contains("](") && matchedText.endsWith(")")) {
-                                        val originalLinkTextLength = matchedText.indexOf("]") - 1 - matchedText.indexOf("[")
-                                        val fullLinkLength = matchedText.length
-                                        transformedIndex -= (fullLinkLength - originalLinkTextLength)
-                                    }
-                                    count++
-                                }
-                            }
-                            return (offset + transformedIndex).coerceIn(0, transformedText.length)
-                        }
+                            var transformedOffset = offset
+                            var shift = 0
+                            var current = 0
 
-                        override fun transformedToOriginal(offset: Int): Int {
-                            var count = 0
-                            var originalIndex = 0
-                            val regex = Regex("""(\*\*[^*]+\*\*|\[([^\]]+)]\([^\)]+\))""")
-                            regex.findAll(originalText.text).forEach { match ->
-                                val matchedText = match.value
+                            val combinedRegex = Regex("""\*\*[^*]*\*\*|\[[^\]]*]\([^\)]*\)|\[[^\]]*[^\]\(]*""")
+                            for (match in combinedRegex.findAll(originalText.text)) {
+                                val length = match.value.length
                                 val matchStart = match.range.first
                                 val matchEnd = match.range.last + 1
 
-                                if (count < offset) {
-                                    if (matchedText.startsWith("**") && matchedText.endsWith("**")) {
-                                        val boldLength = matchedText.length
-                                        if (offset >= matchStart - originalIndex && offset < matchEnd - originalIndex - 2) {
-                                            return offset + originalIndex + 2
-                                        }
-                                        originalIndex += 4
-                                    } else if (matchedText.startsWith("[") && matchedText.contains("](") && matchedText.endsWith(")")) {
-                                        val originalLinkTextLength = matchedText.indexOf("]") - 1 - matchedText.indexOf("[")
-                                        val fullLinkLength = matchedText.length
-                                        if (offset >= matchStart - originalIndex && offset < matchEnd - originalIndex - (fullLinkLength - originalLinkTextLength)) {
-                                            return offset + originalIndex + (fullLinkLength - originalLinkTextLength)
-                                        }
-                                        originalIndex += (fullLinkLength - originalLinkTextLength)
-                                    }
+                                if (offset < matchStart) break
+
+                                if (match.value.startsWith("**")) {
+                                    shift += 4 // 2+2 for **
+                                    transformedOffset -= 2
+                                } else if (match.value.startsWith("[")) {
+                                    val displayText = Regex("""\[(.*?)]""").find(match.value)?.groupValues?.get(1) ?: match.value
+                                    shift += match.value.length - displayText.length
+                                    transformedOffset -= (match.value.length - displayText.length)
                                 }
-                                count += matchedText.length
+
+                                current = matchEnd
                             }
-                            return offset + originalIndex
+
+                            return transformedOffset.coerceIn(0, annotated.length)
+                        }
+
+                        override fun transformedToOriginal(offset: Int): Int {
+                            var originalOffset = offset
+                            var shift = 0
+                            var current = 0
+
+                            val combinedRegex = Regex("""\*\*[^*]*\*\*|\[[^\]]*]\([^\)]*\)|\[[^\]]*[^\]\(]*""")
+                            for (match in combinedRegex.findAll(originalText.text)) {
+                                val matchStart = match.range.first
+                                val matchEnd = match.range.last + 1
+
+                                if (offset < matchStart - shift) break
+
+                                if (match.value.startsWith("**")) {
+                                    shift += 4 // "**" + "**"
+                                    originalOffset += 2
+                                } else if (match.value.startsWith("[")) {
+                                    val displayText = Regex("""\[(.*?)]""").find(match.value)?.groupValues?.get(1) ?: match.value
+                                    val diff = match.value.length - displayText.length
+                                    shift += diff
+                                    originalOffset += diff
+                                }
+
+                                current = matchEnd
+                            }
+
+                            return originalOffset.coerceIn(0, originalText.text.length)
                         }
                     }
                 )
@@ -278,14 +321,62 @@ fun EditorTextField(
     }
 }
 
+fun Markdown(text: String): AnnotatedString {
+    return buildAnnotatedString {
+        val regex = Regex("""(\*\*[^*]*\*\*|\[[^\]]*]\([^\)]*\)|\[[^\]]*[^]\(]*)""")
+        var lastIndex = 0
 
+        regex.findAll(text).forEach { match ->
+            val start = match.range.first
+            val end = match.range.last + 1
+            val matchText = match.value
+
+            append(text.substring(lastIndex, start))
+
+            when {
+                matchText.startsWith("**") && matchText.endsWith("**") -> {
+                    val boldText = matchText.removeSurrounding("**")
+                    withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                        append(boldText)
+                    }
+                }
+                matchText.startsWith("[") && matchText.contains("](") && matchText.endsWith(")") -> {
+                    val linkRegex = Regex("""\[([^\]]*)]\(([^)]*)\)""")
+                    val linkMatch = linkRegex.find(matchText)
+                    val displayText = linkMatch?.groupValues?.get(1) ?: matchText
+                    val url = linkMatch?.groupValues?.get(2) ?: ""
+                    pushStringAnnotation(tag = "URL", annotation = url)
+                    withStyle(style = SpanStyle(color = Color.Blue)) {
+                        append(displayText)
+                    }
+                    pop()
+                }
+                matchText.startsWith("[") -> {
+                    val partialText = matchText.removeSurrounding("[", "]")
+                    withStyle(style = SpanStyle(color = Color.Red)) {
+                        append(partialText)
+                    }
+                }
+                else -> append(matchText)
+            }
+
+            lastIndex = end
+        }
+
+        if (lastIndex < text.length) {
+            append(text.substring(lastIndex))
+        }
+    }
+}
 @Composable
 fun RichEditor(
     editorBlocks: SnapshotStateList<EditorBlock>,
     onTextChange: (Int, String) -> Unit,
     onBackspaceAtStart: (Int) -> Unit,
-    focusRequesters: List<FocusRequester>
+    focusRequesters: List<FocusRequester>,
+    enableToEdit: Boolean
 ) {
+    var imageurilist = mutableListOf<Uri>()
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -298,6 +389,7 @@ fun RichEditor(
                     EditorTextField(
                         index = index,
                         text = block.text,
+                        enableToEdit = enableToEdit,
                         onTextChange = onTextChange,
                         onBackspaceAtStart = onBackspaceAtStart,
                         focusRequester = focusRequesters.getOrNull(index) ?: FocusRequester()
@@ -311,9 +403,13 @@ fun RichEditor(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(200.dp)
+                            .clickable {
+
+                            }
                             .clip(RoundedCornerShape(8.dp))
                             .padding(vertical = 8.dp)
                     )
+                    imageurilist.add(block.uri)
                 }
 
                 else -> Unit

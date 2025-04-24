@@ -1,7 +1,7 @@
 package com.example.keepnote.domain.model
 
 data class noteData(
-    val id: String,
+    val id: String?,
     val archived: Boolean,
     val title: String,
     val body: String,
