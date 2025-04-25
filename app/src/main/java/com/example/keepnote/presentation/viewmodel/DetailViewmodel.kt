@@ -14,23 +14,19 @@ import javax.inject.Inject
 class DetailViewmodel @Inject constructor(
     val repository: NoteRepository
 ) : ViewModel(){
-
     fun saveNote(note : NoteEntity){
         viewModelScope.launch {
             repository.saveNote(note)
         }
     }
-
     fun updateNote(note : NoteEntity){
         viewModelScope.launch {
             repository.updateNote(note)
         }
     }
-
     suspend fun getNote(noteId: Int): NoteEntity {
         return repository.getNote(noteId)
     }
-
     fun deleteNote(noteId : Int){
         viewModelScope.launch {
             repository.deleteNote(noteId)

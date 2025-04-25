@@ -16,7 +16,6 @@ import javax.inject.Inject
 @HiltViewModel
 class NoteViewModel @Inject constructor(
     private val noteRepository: NoteRepository,
-    private val database: AppDatabase
 ) : ViewModel() {
 
     fun getNotes(): Flow<List<NoteEntity>> = noteRepository.getNotes()

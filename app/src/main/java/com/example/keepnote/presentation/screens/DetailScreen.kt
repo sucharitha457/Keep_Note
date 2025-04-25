@@ -7,7 +7,6 @@ import android.net.Uri
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -55,7 +54,7 @@ fun DetailScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     var enableToEdit by rememberSaveable { mutableStateOf(noteId == null) }
-    val isNewNote = noteId == null
+    var isNewNote = noteId == null
     var description by remember { mutableStateOf("") }
     val blocks = remember { mutableStateListOf<EditorBlock>() }
     var isApiData by remember { mutableStateOf(false) }
@@ -176,20 +175,22 @@ fun DetailScreen(
                                     noteId = existingNoteId,
                                     archived = false,
                                     body = savedDesription,
-                                    created_time = System.currentTimeMillis() / 1000,
+                                    createdTime = System.currentTimeMillis() / 1000,
                                     image = "",
                                     isApiData = isApiData
                                 )
-                                Log.d("DetailScreen", "Saved: ")
-                                enableToEdit = false
-                                Log.d("DetailScreen", "enableToEdit: $enableToEdit")
                                 if (isNewNote) {
                                     detailViewmodel.saveNote(newNote)
                                 } else {
                                     detailViewmodel.updateNote(newNote)
                                 }
+                                Log.d("DetailScreen", "isNewNote: $isNewNote || enableToEdit: $enableToEdit")
+                                if (isNewNote){
+                                    isNewNote = false
+                                }
+                                enableToEdit = false
+                                Log.d("DetailScreen", "isNewNote: $isNewNote || enableToEdit: $enableToEdit")
                             } else {
-                                Log.d("DetailScreen", "not saved ")
                                 coroutineScope.launch {
                                     snackbarHostState.showSnackbar("Title and Description cannot be empty")
                                 }

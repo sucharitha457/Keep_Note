@@ -233,28 +233,24 @@ fun Markdown(text: String): AnnotatedString {
     return buildAnnotatedString {
         var lastIndex = 0
 
-        // Matches: **bold**, [text](url)
         val regex = Regex("""\*\*(.*?)\*\*|\[([^\]]+)]\(([^)]+)\)""")
 
         regex.findAll(text).forEach { match ->
             val start = match.range.first
             val end = match.range.last + 1
 
-            // Append any plain text before match
             if (lastIndex < start) {
                 append(text.substring(lastIndex, start))
             }
 
             when {
                 match.groups[1] != null -> {
-                    // **bold**
                     withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
                         append(match.groups[1]!!.value)
                     }
                 }
 
                 match.groups[2] != null && match.groups[3] != null -> {
-                    // [text](url)
                     val displayText = match.groups[2]!!.value
                     val url = match.groups[3]!!.value
                     pushStringAnnotation(tag = "URL", annotation = url)
@@ -272,7 +268,6 @@ fun Markdown(text: String): AnnotatedString {
             lastIndex = end
         }
 
-        // Append any trailing text
         if (lastIndex < text.length) {
             append(text.substring(lastIndex))
         }

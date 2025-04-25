@@ -8,7 +8,7 @@ data class NoteDto(
     val archived: Boolean,
     val title: String,
     val body: String,
-    val created_time: Long,
+    val createdTime: Long,
     val image: String?
 )
 

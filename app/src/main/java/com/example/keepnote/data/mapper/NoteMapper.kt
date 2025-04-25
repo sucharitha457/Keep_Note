@@ -10,7 +10,7 @@ fun NoteDto.toDomain(): NoteData {
         archived = archived,
         title = title,
         body = body,
-        createdTime = created_time,
+        createdTime = createdTime,
         image = image
     )
 }
@@ -22,7 +22,7 @@ fun NoteDto.toEntity(): NoteEntity {
         archived = archived,
         title = title,
         body = body,
-        created_time = created_time,
+        createdTime = createdTime,
         image = image,
         isApiData = true
     )

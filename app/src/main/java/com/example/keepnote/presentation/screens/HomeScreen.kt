@@ -1,7 +1,6 @@
 package com.example.keepnote.presentation.screens
 
 import android.util.Log
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -55,7 +54,7 @@ fun HomeScreen(viewModel: NoteViewModel = hiltViewModel(),navController: NavCont
     Box {
         displayNotes(notes,navController)
         FloatingActionButton(
-            onClick = { navController.navigate(navitem.Note.route) },
+            onClick = { navController.navigate(navItem.Note.route) },
             modifier = Modifier
                 .padding(24.dp)
                 .align(androidx.compose.ui.Alignment.BottomEnd),
@@ -122,7 +121,7 @@ fun noteCard(note: NoteEntity, navController: NavController, fullWidth: Boolean)
             )
             .wrapContentHeight()
             .clickable {
-                navController.navigate(navitem.Note.withNoteId(note.id.toString()))
+                navController.navigate(navItem.Note.withNoteId(note.id.toString()))
             },
         colors = CardDefaults.cardColors(containerColor = backgroundColor),
         shape = RoundedCornerShape(16.dp),
@@ -135,7 +134,7 @@ fun noteCard(note: NoteEntity, navController: NavController, fullWidth: Boolean)
                 color = Color.Black
             )
             Text(
-                text = convertUnixToDate(note.created_time),
+                text = convertUnixToDate(note.createdTime),
                 fontSize = 14.sp,
                 color = Color.DarkGray,
                 modifier = Modifier.padding(top = 8.dp)

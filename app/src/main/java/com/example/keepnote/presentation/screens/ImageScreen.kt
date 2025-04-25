@@ -1,9 +1,7 @@
 package com.example.keepnote.presentation.screens
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectTransformGestures
-import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
@@ -24,18 +22,13 @@ import coil.compose.rememberAsyncImagePainter
 import androidx.core.net.toUri
 import kotlinx.coroutines.launch
 
-
-private const val TAG = "ImageScreen"
-
 @Composable
 fun ImageScreen(images: List<String>, navController: NavHostController, startIndex: Int = 0) {
     val pagerState = rememberPagerState(
         initialPage = startIndex,
         pageCount = { images.size }
     )
-    var isImageScaled by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-    var zoomOut by remember { mutableStateOf(false) }
 
     var offsetX by remember { mutableFloatStateOf(0f) }
     var offsetY by remember { mutableFloatStateOf(0f) }
@@ -43,16 +36,6 @@ fun ImageScreen(images: List<String>, navController: NavHostController, startInd
     var scale by remember { mutableStateOf(1f) }
     val scaleMin = 1f
     val scaleMax = 5f
-    val state = rememberTransformableState { zoomChange, _, _ ->
-        // Apply zoom change, but ensure zoom does not go below 1
-        scale *= zoomChange
-        if (scale < scaleMin) {
-            scale = scaleMin
-        }
-        isImageScaled = scale > 1f
-        zoomOut = scale == 1f || scale < 1f
-        Log.d("TAG", "ImageScreen: isImageScaled:$isImageScaled | scale:$scale | zoomOut:$zoomOut")
-    }
 
     val imageModifier = Modifier
         .fillMaxSize()
@@ -112,21 +95,6 @@ fun ImageScreen(images: List<String>, navController: NavHostController, startInd
             pageSize = PageSize.Fill,
             modifier = Modifier
                 .fillMaxSize()
-//                .pointerInput(Unit) {
-//                    detectTransformGestures { _, pan, gestureZoom, _ ->
-//
-//                        Log.d(TAG, "detectHorizontalDragGestures: $pan")
-////                        if (zoomOut) {
-////                            scope.launch {
-////                                if (dragAmount > 0) {
-////                                    pagerState.animateScrollToPage(pagerState.currentPage + 1)
-////                                } else {
-////                                    pagerState.animateScrollToPage(pagerState.currentPage - 1)
-////                                }
-////                            }
-////                        }
-//                    }
-//                }
         ) { page ->
             val uri = images[page].toUri()
             Image(
