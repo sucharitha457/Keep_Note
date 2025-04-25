@@ -5,6 +5,7 @@ import RichEditor
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -51,10 +52,8 @@ fun DetailScreen(
 ) {
     var existingNoteId by remember { mutableStateOf("") }
     var title by rememberSaveable { mutableStateOf("") }
-    val snackbarHostState = remember { SnackbarHostState() }
-    val coroutineScope = rememberCoroutineScope()
-    var enableToEdit by rememberSaveable { mutableStateOf(noteId == null) }
-    var isNewNote = noteId == null
+    var isNewNote by rememberSaveable { mutableStateOf(noteId == null) }
+    var enableToEdit by rememberSaveable { mutableStateOf(true) }
     var description by remember { mutableStateOf("") }
     val blocks = remember { mutableStateListOf<EditorBlock>() }
     var isApiData by remember { mutableStateOf(false) }
@@ -72,9 +71,11 @@ fun DetailScreen(
         noteId?.toIntOrNull()?.let { id ->
             val fetchedNote = detailViewmodel.getNote(id)
             if (fetchedNote != null) {
+                isNewNote = false
                 title = fetchedNote.title
                 isApiData = fetchedNote.isApiData
-                existingNoteId = fetchedNote.noteId.toString()
+                existingNoteId = fetchedNote.noteId
+                enableToEdit = false
                 if (fetchedNote.isApiData == true) {
                     if (fetchedNote.image != null) {
                         var text = "image[${fetchedNote.image}]text[${fetchedNote.body}]"
@@ -85,8 +86,6 @@ fun DetailScreen(
                 } else {
                     description = fetchedNote.body
                 }
-                Log.d("note", "DetailScreen: $fetchedNote")
-                Log.d("note", "hello ${isApiData}")
             }
         } ?: run {
             isApiData = false
@@ -191,9 +190,7 @@ fun DetailScreen(
                                 enableToEdit = false
                                 Log.d("DetailScreen", "isNewNote: $isNewNote || enableToEdit: $enableToEdit")
                             } else {
-                                coroutineScope.launch {
-                                    snackbarHostState.showSnackbar("Title and Description cannot be empty")
-                                }
+                                Toast.makeText(context, "Title cannot be empty", Toast.LENGTH_SHORT)
                             }
                         }) {
                         Text("Save", fontWeight = FontWeight.SemiBold)

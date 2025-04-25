@@ -48,14 +48,11 @@ fun serializeEditorBlocks(blocks: List<EditorBlock>): String {
         for (block in blocks) {
             when (block) {
                 is EditorBlock.TextBlock -> {
-                    // Escape [ and ] in text to avoid regex issues
                     val escapedText = block.text.replace("[", "\\[").replace("]", "\\]")
                     append("text[$escapedText]")
-                    Log.d("Serialize", "Serialized text block: $escapedText")
                 }
                 is EditorBlock.ImageBlock -> {
                     append("image[${block.uri}]")
-                    Log.d("Serialize", "Serialized image block: ${block.uri}")
                 }
 
                 else -> {}
@@ -68,12 +65,9 @@ fun deserializeToEditorBlocks(data: String): List<EditorBlock> {
     val blocks = mutableListOf<EditorBlock>()
     var currentIndex = 0
     if (data.isBlank()) {
-        Log.w("Deserialize", "Empty input data")
         return emptyList()
     }
     val blockRegex = Regex("(text|image)\\[(.*?)](?=(text|image)\\[|$)", RegexOption.DOT_MATCHES_ALL)
-
-    Log.d("Deserialize", "Input data: $data")
 
     blockRegex.findAll(data).forEach { match ->
         val type = match.groupValues[1]
@@ -83,8 +77,6 @@ fun deserializeToEditorBlocks(data: String): List<EditorBlock> {
             value = value.replace("\\[", "[").replace("\\]", "]")
         }
 
-        Log.d("Deserialize", "Matched block: type=$type, value=$value")
-
         when (type) {
             "text" -> blocks.add(EditorBlock.TextBlock(value))
             "image" -> blocks.add(EditorBlock.ImageBlock(Uri.parse(value)))
@@ -93,11 +85,6 @@ fun deserializeToEditorBlocks(data: String): List<EditorBlock> {
 
         currentIndex = match.range.last + 1
     }
-
-    if (currentIndex < data.length) {
-        Log.w("Deserialize", "Unprocessed data: ${data.substring(currentIndex)}")
-    }
-
     return blocks.also { Log.d("Deserialize", "Deserialized blocks: $it") }
 }
 

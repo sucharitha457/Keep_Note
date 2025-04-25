@@ -1,6 +1,5 @@
 package com.example.keepnote.presentation.screens
 
-import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,7 +17,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -42,10 +40,6 @@ fun HomeScreen(viewModel: NoteViewModel = hiltViewModel(),navController: NavCont
 
     if (loading) {
         CircularProgressIndicator()
-    }
-
-    LaunchedEffect (key1 = true){
-        Log.d("HomeScreen", "LaunchedEffect triggered $notes")
     }
 
     error?.let {
@@ -144,7 +138,6 @@ fun noteCard(note: NoteEntity, navController: NavController, fullWidth: Boolean)
 }
 
 fun convertUnixToDate(unixTime: Long): String {
-    Log.d("HomeScreen", "convertUnixToDate: $unixTime")
     val date = Date(unixTime * 1000)
     val format = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
     return format.format(date)
