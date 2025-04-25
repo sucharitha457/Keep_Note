@@ -38,121 +38,6 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 
-@Composable
-fun RichTextEditorScreen(initialContent: String = "") {
-    val blocks = remember { mutableStateListOf<EditorBlock>() }
-    val focusRequesters = remember { mutableStateListOf<FocusRequester>() }
-    var savedContent by remember { mutableStateOf(initialContent) }
-    val pendingFocusIndex = remember { mutableStateOf<Int?>(null) }
-
-    LaunchedEffect(Unit) {
-        blocks.clear()
-        focusRequesters.clear()
-
-        if (initialContent.isNotBlank()) {
-            val deserialized = deserializeToEditorBlocks(initialContent)
-            blocks.addAll(deserialized)
-            focusRequesters.addAll(deserialized.map { FocusRequester() })
-        } else {
-            blocks.add(EditorBlock.TextBlock(""))
-            focusRequesters.add(FocusRequester())
-        }
-    }
-
-    LaunchedEffect(pendingFocusIndex.value) {
-        pendingFocusIndex.value?.let { index ->
-            focusRequesters.getOrNull(index)?.requestFocus()
-            pendingFocusIndex.value = null
-        }
-    }
-
-    val imagePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-        uri?.let {
-            val lastIndex = blocks.lastIndex
-            val lastBlock = blocks.getOrNull(lastIndex)
-
-            if (lastBlock !is EditorBlock.TextBlock || lastBlock.text.isNotBlank()) {
-                blocks.add(EditorBlock.ImageBlock(it))
-                focusRequesters.add(FocusRequester())
-
-                blocks.add(EditorBlock.TextBlock(""))
-                focusRequesters.add(FocusRequester())
-
-                pendingFocusIndex.value = blocks.lastIndex
-            } else {
-                blocks.add(lastIndex, EditorBlock.ImageBlock(it))
-                focusRequesters.add(lastIndex, FocusRequester())
-
-                pendingFocusIndex.value = lastIndex + 1
-            }
-        }
-    }
-
-    Column(modifier = Modifier.fillMaxSize()) {
-//        RichEditor(
-//            editorBlocks = blocks,
-//            onTextChange = { index, newText ->
-//                if (index in blocks.indices) {
-//                    blocks[index] = EditorBlock.TextBlock(newText)
-//                }
-//            },
-//            onBackspaceAtStart = { index ->
-//                if (index > 0 &&
-//                    blocks.getOrNull(index) is EditorBlock.TextBlock &&
-//                    blocks.getOrNull(index - 1) is EditorBlock.ImageBlock
-//                ) {
-//                    blocks.removeAt(index)
-//                    focusRequesters.removeAt(index)
-//
-//                    blocks.removeAt(index - 1)
-//                    focusRequesters.removeAt(index - 1)
-//
-//                    pendingFocusIndex.value = (index - 2).coerceAtLeast(0)
-//                }
-//            },
-//            focusRequesters = focusRequesters,
-//            enableToEdit = true
-//        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Button(
-            onClick = { imagePickerLauncher.launch("image/*") },
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-                .fillMaxWidth()
-        ) {
-            Text("Add Image")
-        }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            Button(onClick = {
-                savedContent = serializeEditorBlocks(blocks)
-                Log.d("content", "savedContent: $savedContent")
-            }) {
-                Text("Save")
-            }
-
-            Button(onClick = {
-                blocks.clear()
-                focusRequesters.clear()
-
-                val restored = deserializeToEditorBlocks(savedContent)
-                blocks.addAll(restored)
-                focusRequesters.addAll(restored.map { FocusRequester() })
-            }) {
-                Text("Load")
-            }
-        }
-    }
-}
-
-
 sealed class EditorBlock {
     data class TextBlock(val text: String) : EditorBlock()
     data class ImageBlock(val uri: Uri) : EditorBlock()
@@ -401,7 +286,8 @@ fun RichEditor(
     onBackspaceAtStart: (Int) -> Unit,
     focusRequesters: List<FocusRequester>,
     enableToEdit: Boolean,
-    navController: NavController
+    navController: NavController,
+    firstBlockFocusRequester: FocusRequester? = null
 ) {
     var imageurilist = mutableListOf<String>()
 
@@ -436,6 +322,11 @@ fun RichEditor(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(200.dp)
+                            .then(
+                                if (index == 0 && firstBlockFocusRequester != null)
+                                    Modifier.focusRequester(firstBlockFocusRequester)
+                                else Modifier
+                            )
                             .clickable {
                                 navController.navigate(navToImageScreen(imageurilist,imageurilist.indexOf(block.uri.toString())))
                             }

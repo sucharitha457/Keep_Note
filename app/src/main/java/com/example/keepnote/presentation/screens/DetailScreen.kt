@@ -9,7 +9,10 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
@@ -20,10 +23,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -61,6 +67,7 @@ fun DetailScreen(
     val context = LocalContext.current
     val focusRequesters = remember { mutableStateListOf<FocusRequester>() }
     val pendingFocusIndex = remember { mutableStateOf<Int?>(null) }
+    val nextFocusRequester = remember { FocusRequester() }
 
     LaunchedEffect(noteId) {
         noteId?.toIntOrNull()?.let { id ->
@@ -104,13 +111,18 @@ fun DetailScreen(
             pendingFocusIndex.value = null
         }
     }
+    LaunchedEffect(Unit) {
+        if (pendingFocusIndex.value == 0 && focusRequesters.isNotEmpty()) {
+            focusRequesters[0].requestFocus()
+        }
+    }
+
     val imagePickerLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
             uri?.let {
                 try {
                     context.contentResolver.takePersistableUriPermission(
-                        it,
-                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        it, Intent.FLAG_GRANT_READ_URI_PERMISSION
                     )
                 } catch (e: SecurityException) {
                     e.printStackTrace()
@@ -136,154 +148,162 @@ fun DetailScreen(
             }
         }
 
-//    Scaffold(
-//        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
-//    ) { paddingValues ->
-        Column(
-            modifier = modifier
-                .padding(horizontal = 10.dp)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = { navController.popBackStack() },
-                    modifier = Modifier
-                ) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                }
 
-                Spacer(modifier = Modifier.weight(1f))
+    Column(
+        modifier = modifier.padding(horizontal = 10.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(
+                onClick = { navController.popBackStack() }, modifier = Modifier
+            ) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+            }
 
+            Spacer(modifier = Modifier.weight(1f))
+            if (!isApiData) {
                 if (enableToEdit || isNewNote) {
-                    FloatingActionButton(
-                        containerColor = Primary,
-                        contentColor = Color.White,
+                    Button(
+                        colors = ButtonColors(containerColor = Primary, contentColor = Color.White , disabledContentColor = Color.LightGray, disabledContainerColor = Color.LightGray),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.padding(horizontal = 4.dp),
                         onClick = {
-                        Log.d("DEBUG", "Title: '${title}' (${title.length})")
-                        Log.d(
-                            "DEBUG",
-                            "Description: '${savedDesription}' (${savedDesription.length})"
-                        )
-                        if (title.trim().length != 0 || savedDesription.trim().length != 0) {
-                            Log.d("DetailScreen", "Saved: ")
-                            val newNote = NoteEntity(
-                                id = noteId?.toIntOrNull() ?: 0,
-                                title = title,
-                                noteId = existingNoteId,
-                                archived = false,
-                                body = savedDesription,
-                                created_time = System.currentTimeMillis() / 1000,
-                                image = "",
-                                isApiData = isApiData
-                            )
-                            if (isNewNote) {
-                                detailViewmodel.saveNote(newNote)
+
+                            if (title.trim().length != 0) {
+                                Log.d("DetailScreen", "Saved: ")
+                                val newNote = NoteEntity(
+                                    id = noteId?.toIntOrNull() ?: 0,
+                                    title = title,
+                                    noteId = existingNoteId,
+                                    archived = false,
+                                    body = savedDesription,
+                                    created_time = System.currentTimeMillis() / 1000,
+                                    image = "",
+                                    isApiData = isApiData
+                                )
+                                Log.d("DetailScreen", "Saved: ")
+                                enableToEdit = false
+                                Log.d("DetailScreen", "enableToEdit: $enableToEdit")
+                                if (isNewNote) {
+                                    detailViewmodel.saveNote(newNote)
+                                } else {
+                                    detailViewmodel.updateNote(newNote)
+                                }
                             } else {
-                                detailViewmodel.updateNote(newNote)
+                                Log.d("DetailScreen", "not saved ")
+                                coroutineScope.launch {
+                                    snackbarHostState.showSnackbar("Title and Description cannot be empty")
+                                }
                             }
-                            Log.d("DetailScreen", "Saved: $newNote")
-                            navController.popBackStack()
-                        } else {
-                            Log.d("DetailScreen", "not saved ")
-                            coroutineScope.launch {
-                                snackbarHostState.showSnackbar("Title and Description cannot be empty")
-                            }
-                        }
-                    }) {
-                        Text("Save")
+                        }) {
+                        Text("Save", fontWeight = FontWeight.SemiBold)
                     }
                     Spacer(modifier = Modifier.width(8.dp))
-                    FloatingActionButton(
-                        containerColor = Primary,
-                        contentColor = Color.White,
+                    Button(
+                        colors = ButtonColors(containerColor = Primary, contentColor = Color.White , disabledContentColor = Color.LightGray, disabledContainerColor = Color.LightGray),
+                        shape = RoundedCornerShape(8.dp),
                         onClick = {
-                        imagePickerLauncher.launch("image/*")
-                    }) {
+                            imagePickerLauncher.launch("image/*")
+                        }) {
                         Icon(
                             painter = painterResource(R.drawable.baseline_attach_file_24),
                             contentDescription = "Attach File"
                         )
                     }
                 } else {
-                    FloatingActionButton(
-                        containerColor = Primary,
-                        contentColor = Color.White,
+                    Button(
+                        colors = ButtonColors(containerColor = Primary, contentColor = Color.White , disabledContentColor = Color.LightGray, disabledContainerColor = Color.LightGray),
+                        shape = RoundedCornerShape(8.dp),
                         onClick = {
-                        enableToEdit = true
-                    }) {
+                            enableToEdit = true
+                        }) {
                         Icon(Icons.Default.Edit, contentDescription = "Edit")
                     }
                 }
-                if (!isNewNote && isApiData == false) {
+                if (!isNewNote) {
                     Spacer(modifier = Modifier.width(8.dp))
-                    FloatingActionButton(
-                        containerColor = Primary,
-                        contentColor = Color.White,
+                    Button(
+                        colors = ButtonColors(containerColor = Primary, contentColor = Color.White , disabledContentColor = Color.LightGray, disabledContainerColor = Color.LightGray),
+
+                        shape = RoundedCornerShape(8.dp),
                         onClick = {
-                        noteId?.toIntOrNull()?.let {
-                            detailViewmodel.deleteNote(it)
-                            navController.popBackStack()
-                        }
-                    }) {
+                            noteId?.toIntOrNull()?.let {
+                                detailViewmodel.deleteNote(it)
+                                navController.popBackStack()
+                            }
+                        }) {
                         Icon(Icons.Default.Delete, contentDescription = "Delete")
                     }
-
                     Spacer(modifier = Modifier.width(8.dp))
                 } else if (isNewNote) {
                     Spacer(modifier = Modifier.width(8.dp))
-                    FloatingActionButton(
-                        containerColor = Primary,
-                        contentColor = Color.White,
+                    Button(
+                        colors = ButtonColors(containerColor = Primary, contentColor = Color.White , disabledContentColor = Color.LightGray, disabledContainerColor = Color.LightGray),
+
+                        shape = RoundedCornerShape(8.dp),
                         onClick = {
-                        title = ""
-                        navController.popBackStack()
-                    }) {
+                            title = ""
+                            navController.popBackStack()
+                        }) {
                         Text("Discard")
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                 }
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            BasicTextField(
-                value = title,
-                onValueChange = { title = it },
-                textStyle = TextStyle(color = Color.Black, fontSize = 24.sp),
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-                decorationBox = { innerTextField ->
-                    if (title.isEmpty()) {
-                        Text(text = "Title", color = Color.Gray, fontSize = 24.sp)
-                    }
-                    innerTextField()
-                },
-                enabled = if (isNewNote || enableToEdit) true else false
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            RichEditor(
-                editorBlocks = blocks,
-                enableToEdit = if (isNewNote || enableToEdit) true else false,
-                onTextChange = { index, newText ->
-                    if (index in blocks.indices) {
-                        blocks[index] = EditorBlock.TextBlock(newText)
-                    }
-                },
-                onBackspaceAtStart = { index ->
-                    if (index > 0 &&
-                        blocks.getOrNull(index) is EditorBlock.TextBlock &&
-                        blocks.getOrNull(index - 1) is EditorBlock.ImageBlock
-                    ) {
-                        blocks.removeAt(index)
-                        focusRequesters.removeAt(index)
-
-                        blocks.removeAt(index - 1)
-                        focusRequesters.removeAt(index - 1)
-
-                        pendingFocusIndex.value = (index - 2).coerceAtLeast(0)
-                    }
-                },
-                focusRequesters = focusRequesters,
-                navController = navController
-            )
         }
-//    }
+        Spacer(modifier = Modifier.height(16.dp))
+
+        BasicTextField(
+            value = title,
+            onValueChange = { title = it },
+            textStyle = TextStyle(color = Color.Black, fontSize = 24.sp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .focusRequester(nextFocusRequester)
+                .padding(horizontal = 4.dp),
+            decorationBox = { innerTextField ->
+                if (title.isEmpty()) {
+                    Text(text = "Title", color = Color.Gray, fontSize = 24.sp)
+                }
+                innerTextField()
+            },
+            maxLines = 1,
+            enabled = if (isNewNote || enableToEdit) true else false,
+            keyboardOptions = KeyboardOptions.Default.copy(
+                imeAction = ImeAction.Next
+            ),
+            keyboardActions = KeyboardActions(
+                onNext = {
+                    focusRequesters.firstOrNull()?.requestFocus()
+                }
+            )
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        RichEditor(
+            editorBlocks = blocks,
+            enableToEdit = if (isNewNote || enableToEdit) true else false,
+            onTextChange = { index, newText ->
+                if (index in blocks.indices) {
+                    blocks[index] = EditorBlock.TextBlock(newText)
+                }
+            },
+            onBackspaceAtStart = { index ->
+                if (index > 0 && blocks.getOrNull(index) is EditorBlock.TextBlock && blocks.getOrNull(
+                        index - 1
+                    ) is EditorBlock.ImageBlock
+                ) {
+                    blocks.removeAt(index)
+                    focusRequesters.removeAt(index)
+
+                    blocks.removeAt(index - 1)
+                    focusRequesters.removeAt(index - 1)
+
+                    pendingFocusIndex.value = (index - 2).coerceAtLeast(0)
+                }
+            },
+            focusRequesters = focusRequesters,
+            navController = navController,
+            firstBlockFocusRequester = focusRequesters.firstOrNull()
+        )
+    }
 }
 
