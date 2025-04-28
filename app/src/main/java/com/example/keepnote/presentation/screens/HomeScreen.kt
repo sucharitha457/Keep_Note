@@ -1,5 +1,6 @@
 package com.example.keepnote.presentation.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,18 +20,28 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.keepnote.R
 import com.example.keepnote.data.local.NoteEntity
 import com.example.keepnote.presentation.viewmodel.NoteViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+
+val googleFontFamily = FontFamily(
+    Font(R.font.zoho_puvi_bold_italic, FontWeight.Bold)
+)
 
 @Composable
 fun HomeScreen(viewModel: NoteViewModel = hiltViewModel(),navController: NavController) {
@@ -45,16 +56,29 @@ fun HomeScreen(viewModel: NoteViewModel = hiltViewModel(),navController: NavCont
     error?.let {
         Text(text = "Error: $it")
     }
-    Box {
-        displayNotes(notes,navController)
-        FloatingActionButton(
-            onClick = { navController.navigate(NavItem.Note.route) },
+    Column {
+        Text(
+            text = "Notes",
+            style = TextStyle(
+                fontFamily = googleFontFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 24.sp,
+                color = Color.Black
+            ),
             modifier = Modifier
-                .padding(24.dp)
-                .align(androidx.compose.ui.Alignment.BottomEnd),
-            containerColor = Color.Black
-        ) {
-            Text("+", fontSize = 30.sp, color = Color.White)
+                .padding(vertical = 4.dp, horizontal = 16.dp)
+        )
+        Box {
+            displayNotes(notes, navController)
+            FloatingActionButton(
+                onClick = { navController.navigate(NavItem.Note.route) },
+                modifier = Modifier
+                    .padding(24.dp)
+                    .align(Alignment.BottomEnd),
+                containerColor = Color.Black
+            ) {
+                Text("+", fontSize = 30.sp, color = Color.White)
+            }
         }
     }
 }
