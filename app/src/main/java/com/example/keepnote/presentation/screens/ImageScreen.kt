@@ -16,6 +16,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
@@ -29,6 +31,11 @@ fun ImageScreen(images: List<String>, navController: NavHostController, startInd
         pageCount = { images.size }
     )
     val scope = rememberCoroutineScope()
+    val configuration = LocalConfiguration.current
+    val density = LocalDensity.current
+
+    val screenWidthPx = with(density) { configuration.screenWidthDp.dp.toPx() }
+    val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
 
     var offsetX by remember { mutableFloatStateOf(0f) }
     var offsetY by remember { mutableFloatStateOf(0f) }
@@ -40,35 +47,41 @@ fun ImageScreen(images: List<String>, navController: NavHostController, startInd
     val imageModifier = Modifier
         .fillMaxSize()
         .pointerInput(Unit) {
-            detectTransformGestures(
-                onGesture = { _, pan, gestureZoom, _ ->
+            detectTransformGestures { _, pan, gestureZoom, _ ->
 
-                    scale = (scale * gestureZoom).coerceIn(scaleMin, scaleMax)
+                scale = (scale * gestureZoom).coerceIn(scaleMin, scaleMax)
 
-                    if (scale == 1f) {
-                        offsetX += pan.x * 6
-                        offsetY += pan.y * 6
-                    } else {
-                        offsetX = 1f
-                        offsetY = 1f
-                    }
+                if (scale > 1f) {
+                    offsetX += pan.x
+                    offsetY += pan.y
+                } else {
+                    offsetX = 0f
+                    offsetY = 0f
 
-                    if (scale == 1f) {
-                        scope.launch {
-                            val threshold = 20f
-                            if (pan.x > threshold) {
-                                pagerState.animateScrollToPage(pagerState.currentPage - 1)
-                            } else if (pan.x < -threshold) {
-                                pagerState.animateScrollToPage(pagerState.currentPage + 1)
-                            }
+                    scope.launch {
+                        val threshold = 20f
+                        if (pan.x > threshold) {
+                            pagerState.animateScrollToPage((pagerState.currentPage - 1).coerceAtLeast(0))
+                        } else if (pan.x < -threshold) {
+                            pagerState.animateScrollToPage((pagerState.currentPage + 1).coerceAtMost(images.lastIndex))
                         }
                     }
                 }
-            )
+                offsetX = (offsetX + pan.x).coerceIn(
+                    -(scale - 1) * screenWidthPx / 2,
+                    (scale - 1) * screenWidthPx / 2
+                )
+                offsetY = (offsetY + pan.y).coerceIn(
+                    -(scale - 1) * screenHeightPx / 2,
+                    (scale - 1) * screenHeightPx / 2
+                )
+            }
         }
         .graphicsLayer {
             scaleX = scale
             scaleY = scale
+            translationX = offsetX
+            translationY = offsetY
         }
 
 
