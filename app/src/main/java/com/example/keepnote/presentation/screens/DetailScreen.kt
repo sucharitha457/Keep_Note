@@ -164,6 +164,7 @@ fun DetailScreen(
                         colors = ButtonColors(containerColor = Primary, contentColor = Color.White , disabledContentColor = Color.LightGray, disabledContainerColor = Color.LightGray),
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.padding(horizontal = 4.dp),
+                        contentPadding = PaddingValues(0.dp),
                         onClick = {
 
                             if (title.trim().length != 0) {
@@ -183,22 +184,21 @@ fun DetailScreen(
                                 } else {
                                     detailViewmodel.updateNote(newNote)
                                 }
-                                Log.d("DetailScreen", "isNewNote: $isNewNote || enableToEdit: $enableToEdit")
                                 if (isNewNote){
                                     isNewNote = false
                                 }
                                 enableToEdit = false
-                                Log.d("DetailScreen", "isNewNote: $isNewNote || enableToEdit: $enableToEdit")
                             } else {
-                                Toast.makeText(context, "Title cannot be empty", Toast.LENGTH_SHORT)
+                                Toast.makeText(context, "Title cannot be empty", Toast.LENGTH_SHORT).show()
                             }
                         }) {
                         Text("Save", fontWeight = FontWeight.SemiBold)
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
                     Button(
                         colors = ButtonColors(containerColor = Primary, contentColor = Color.White , disabledContentColor = Color.LightGray, disabledContainerColor = Color.LightGray),
                         shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(0.dp),
                         onClick = {
                             imagePickerLauncher.launch("image/*")
                         }) {
@@ -211,6 +211,7 @@ fun DetailScreen(
                     Button(
                         colors = ButtonColors(containerColor = Primary, contentColor = Color.White , disabledContentColor = Color.LightGray, disabledContainerColor = Color.LightGray),
                         shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(0.dp),
                         onClick = {
                             enableToEdit = true
                         }) {
@@ -221,7 +222,7 @@ fun DetailScreen(
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
                         colors = ButtonColors(containerColor = Primary, contentColor = Color.White , disabledContentColor = Color.LightGray, disabledContainerColor = Color.LightGray),
-
+                        contentPadding = PaddingValues(0.dp),
                         shape = RoundedCornerShape(8.dp),
                         onClick = {
                             noteId?.toIntOrNull()?.let {
@@ -236,7 +237,7 @@ fun DetailScreen(
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
                         colors = ButtonColors(containerColor = Primary, contentColor = Color.White , disabledContentColor = Color.LightGray, disabledContainerColor = Color.LightGray),
-
+                        contentPadding = PaddingValues(0.dp),
                         shape = RoundedCornerShape(8.dp),
                         onClick = {
                             title = ""
@@ -300,8 +301,8 @@ fun DetailScreen(
             },
             focusRequesters = focusRequesters,
             navController = navController,
-            firstBlockFocusRequester = focusRequesters.firstOrNull()
+            firstBlockFocusRequester = focusRequesters.firstOrNull(),
+
         )
     }
 }
-

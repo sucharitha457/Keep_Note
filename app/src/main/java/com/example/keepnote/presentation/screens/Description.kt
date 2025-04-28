@@ -1,8 +1,7 @@
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -269,10 +268,10 @@ fun RichEditor(
     focusRequesters: List<FocusRequester>,
     enableToEdit: Boolean,
     navController: NavController,
-    firstBlockFocusRequester: FocusRequester? = null
+    firstBlockFocusRequester: FocusRequester? = null,
 ) {
     var imageurilist = mutableListOf<String>()
-
+    val context = LocalContext.current
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -310,14 +309,17 @@ fun RichEditor(
                                 else Modifier
                             )
                             .clickable {
-                                navController.navigate(navToImageScreen(imageurilist,imageurilist.indexOf(block.uri.toString())))
+                                if (enableToEdit){
+                                    Toast.makeText(context,"Save note to view preview of image",Toast.LENGTH_SHORT).show()
+                                }else{
+                                    navController.navigate(navToImageScreen(imageurilist,imageurilist.indexOf(block.uri.toString())))
+                                }
                             }
                             .clip(RoundedCornerShape(8.dp))
                             .padding(vertical = 8.dp)
                     )
                     imageurilist.add(block.uri.toString())
                 }
-
                 else -> Unit
             }
         }
