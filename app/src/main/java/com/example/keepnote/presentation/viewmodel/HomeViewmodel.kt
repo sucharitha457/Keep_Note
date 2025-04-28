@@ -2,9 +2,8 @@ package com.example.keepnote.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.keepnote.data.local.AppDatabase
 import com.example.keepnote.data.local.NoteEntity
-import com.example.keepnote.domain.repository.NoteRepository
+import com.example.keepnote.domain.usecase.NoteUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,14 +14,14 @@ import javax.inject.Inject
 
 @HiltViewModel
 class NoteViewModel @Inject constructor(
-    private val noteRepository: NoteRepository,
+    private val noteUseCase: NoteUseCase,
 ) : ViewModel() {
 
-    fun getNotes(): Flow<List<NoteEntity>> = noteRepository.getNotes()
+    fun getNotes(): Flow<List<NoteEntity>> = noteUseCase.getNotes()
 
     fun refreshFromApi() {
         viewModelScope.launch {
-            noteRepository.refreshNotesFromApi()
+            noteUseCase.refreshNotesFromApi()
         }
     }
 

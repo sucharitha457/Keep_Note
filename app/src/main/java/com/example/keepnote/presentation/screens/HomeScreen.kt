@@ -48,7 +48,7 @@ fun HomeScreen(viewModel: NoteViewModel = hiltViewModel(),navController: NavCont
     Box {
         displayNotes(notes,navController)
         FloatingActionButton(
-            onClick = { navController.navigate(navItem.Note.route) },
+            onClick = { navController.navigate(NavItem.Note.route) },
             modifier = Modifier
                 .padding(24.dp)
                 .align(androidx.compose.ui.Alignment.BottomEnd),
@@ -115,7 +115,7 @@ fun noteCard(note: NoteEntity, navController: NavController, fullWidth: Boolean)
             )
             .wrapContentHeight()
             .clickable {
-                navController.navigate(navItem.Note.withNoteId(note.id.toString()))
+                navController.navigate(NavItem.Note.withNoteId(note.id.toString()))
             },
         colors = CardDefaults.cardColors(containerColor = backgroundColor),
         shape = RoundedCornerShape(16.dp),

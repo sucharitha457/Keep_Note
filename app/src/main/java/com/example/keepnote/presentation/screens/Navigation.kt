@@ -22,10 +22,10 @@ fun Navigation(){
 
         NavHost(
             navController,
-            startDestination = navItem.Home.route,
+            startDestination = NavItem.Home.route,
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable(navItem.Home.route) {
+            composable(NavItem.Home.route) {
                 HomeScreen(navController = navController)
             }
             composable(
@@ -71,9 +71,9 @@ fun Navigation(){
     }
 }
 
-sealed class navItem(val route: String) {
-    object Home : navItem("home")
-    object Note : navItem("note?noteId={noteId}") {
+sealed class NavItem(val route: String) {
+    object Home : NavItem("home")
+    object Note : NavItem("note?noteId={noteId}") {
         fun withNoteId(noteId: String?) = "note?noteId=$noteId"
     }
 }
